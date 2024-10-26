@@ -5,7 +5,7 @@
 body,
 input,
 textarea {
-	@apply border-white bg-slate-800 text-white;
+	@apply border-white bg-gray-800 text-white;
 }
 
 input,

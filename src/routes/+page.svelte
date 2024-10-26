@@ -3,9 +3,9 @@
 	import { onMount, tick } from 'svelte';
 
 	// Messages that the client receives
-	interface MsgRegistered {
-		id: number;
-	}
+	// interface MsgRegistered {
+	// 	id: number;
+	// }
 	interface MsgReceiveMessage {
 		author: string;
 		channel: string;
@@ -19,11 +19,11 @@
 			content: string;
 		};
 	}
-	interface ChangeUsername {
-		ChangeUsername: {
-			username: string;
-		};
-	}
+	// interface ChangeUsername {
+	// 	ChangeUsername: {
+	// 		username: string;
+	// 	};
+	// }
 
 	let WS_URL = $page.url.hash == '' ? 'ws://127.0.0.1:6464' : $page.url.hash.slice(1);
 
@@ -32,21 +32,21 @@
 		content: string;
 	}[] = [];
 
-	let myId = -1;
+	// let myId = -1;
 	let channel = '# Aqui seria o nome do canal';
 
 	let myUsername = 'username aqui';
 	let newMessage = '';
 
-	let messagesElement: HTMLElement;
+	let messagesEl: HTMLElement;
 	let ws: WebSocket;
 
 	const wsHandlers: any = {
-		Registered(e: MsgRegistered) {
-			myId = e.id;
+		// Registered(e: MsgRegistered) {
+		// 	myId = e.id;
 
-			myUsername = 'usuário ' + myId;
-		},
+		// 	myUsername = 'usuário ' + myId;
+		// },
 		ReceiveMessage(e: MsgReceiveMessage) {
 			messages = [
 				...messages,
@@ -79,18 +79,18 @@
 		};
 	});
 
-	function SendWSMessage<T, C>(type: T, content: C) {}
+	// function SendWSMessage<T, C>(type: T, content: C) {}
 
 	async function sendMessage() {
 		if (newMessage.trim() == '') return;
 
-		// messages = [
-		// 	...messages,
-		// 	{
-		// 		author: myUsername,
-		// 		content: newMessage
-		// 	}
-		// ];
+		messages = [
+			...messages,
+			{
+				author: myUsername,
+				content: newMessage
+			}
+		];
 
 		ws.send(
 			JSON.stringify({
@@ -109,12 +109,17 @@
 	async function scrollToBottom() {
 		await tick();
 
-		const last = messagesElement.lastElementChild;
+		const tolerance = 50;
+
+		if (messagesEl.clientHeight + messagesEl.scrollTop + tolerance < messagesEl.scrollHeight)
+			return;
+
+		const last = messagesEl.lastElementChild;
 		if (last) last.scrollIntoView();
 	}
 
 	function isLastMessageSameAuthor(i: number, author: string) {
-		if (i <= 1) return false;
+		if (i < 1) return false;
 
 		return messages[i - 1].author == author;
 	}
@@ -131,25 +136,42 @@
 
 	<main class="flex h-screen w-full flex-col gap-2 p-4">
 		<input bind:value={myUsername} class="w-full border-2" type="text" />
-		<p>your id is {myId}</p>
+		<!-- <p>your id is {myId}</p> -->
 		<h1 class="text-xl font-bold">{channel}</h1>
 
 		<hr />
 
-		<ul bind:this={messagesElement} class="flex h-full flex-col overflow-auto">
+		<ul bind:this={messagesEl} class="flex h-full flex-col overflow-auto">
 			{#each messages as message, i}
+				{@const sameAuthor = isLastMessageSameAuthor(i, message.author)}
 				<li
-					class="flex flex-col whitespace-pre-wrap"
+					class="{sameAuthor
+						? ''
+						: 'mt-2'} 77whitespace-pre-wrap flex items-center gap-2 hover:bg-gray-700"
 					on:contextmenu={(e) => {
 						if (confirm('Do you want to delete this message?')) {
+							e.preventDefault();
 							console.log("You've been trolled");
 						}
 					}}
 				>
-					{#if !isLastMessageSameAuthor(i, message.author)}
-						<strong class="mt-2">{message.author}</strong>
+					{#if sameAuthor}
+						<span class="w-10"></span>
+					{:else}
+						<img src="/pexe.png" alt="" class="h-10 w-10" />
 					{/if}
-					<p>{message.content}</p>
+
+					<span class="flex flex-col items-start justify-start">
+						<div class="flex items-center gap-2">
+							{#if !sameAuthor}
+								<p class="font-semibold">{message.author}</p>
+								<p class="text-center text-sm text-gray-400">
+									{new Date().toLocaleString('pt-br')}
+								</p>
+							{/if}
+						</div>
+						<p>{message.content}</p>
+					</span>
 				</li>
 			{/each}
 		</ul>
