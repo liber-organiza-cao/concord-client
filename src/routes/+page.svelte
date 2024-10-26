@@ -30,15 +30,15 @@
 	let messages: {
 		author: string;
 		content: string;
-	}[] = [];
+	}[] = $state([]);
 
 	// let myId = -1;
 	let channel = '# Aqui seria o nome do canal';
 
-	let myUsername = 'username aqui';
-	let newMessage = '';
+	let myUsername = $state('meu username aqui');
+	let newMessage = $state('');
 
-	let messagesEl: HTMLElement;
+	let messagesEl = $state<HTMLElement>();
 	let ws: WebSocket;
 
 	const wsHandlers: any = {
@@ -48,14 +48,11 @@
 		// 	myUsername = 'usuário ' + myId;
 		// },
 		ReceiveMessage(e: MsgReceiveMessage) {
-			messages = [
-				...messages,
-				{
-					author: 'usuário ' + e.author,
-					// channel: msg['channel'],
-					content: e.content
-				}
-			];
+			messages.push({
+				author: 'usuário ' + e.author,
+				// channel: msg['channel'],
+				content: e.content
+			});
 
 			scrollToBottom();
 		}
@@ -84,13 +81,10 @@
 	async function sendMessage() {
 		if (newMessage.trim() == '') return;
 
-		messages = [
-			...messages,
-			{
-				author: myUsername,
-				content: newMessage
-			}
-		];
+		messages.push({
+			author: myUsername,
+			content: newMessage
+		});
 
 		ws.send(
 			JSON.stringify({
@@ -111,10 +105,10 @@
 
 		const tolerance = 50;
 
-		if (messagesEl.clientHeight + messagesEl.scrollTop + tolerance < messagesEl.scrollHeight)
+		if (messagesEl!.clientHeight + messagesEl!.scrollTop + tolerance < messagesEl!.scrollHeight)
 			return;
 
-		const last = messagesEl.lastElementChild;
+		const last = messagesEl!.lastElementChild;
 		if (last) last.scrollIntoView();
 	}
 
@@ -148,7 +142,7 @@
 					class="{sameAuthor
 						? ''
 						: 'mt-2'} 77whitespace-pre-wrap flex items-center gap-2 hover:bg-gray-700"
-					on:contextmenu={(e) => {
+					oncontextmenu={(e) => {
 						if (confirm('Do you want to delete this message?')) {
 							e.preventDefault();
 							console.log("You've been trolled");
@@ -178,14 +172,14 @@
 
 		<form
 			class="flex items-center gap-2"
-			on:submit={(e) => {
+			onsubmit={(e) => {
 				e.preventDefault();
 
 				sendMessage();
 			}}
 		>
 			<textarea
-				on:keydown={(e) => {
+				onkeydown={(e) => {
 					if (e.key == 'Enter' && !e.shiftKey) {
 						e.preventDefault();
 						sendMessage();
