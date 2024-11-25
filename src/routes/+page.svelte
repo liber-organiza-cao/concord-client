@@ -2,28 +2,54 @@
 	import { page } from '$app/stores';
 	import { onMount, tick } from 'svelte';
 
-	// Messages that the client receives
-	// interface MsgRegistered {
-	// 	id: number;
-	// }
-	interface MsgReceiveMessage {
-		author: string;
-		channel: string;
-		content: string;
-	}
-
-	// Messages that the client sends
-	interface MsgSendMessage {
+	type ClientToServerMsg = {
 		SendMessage: {
 			channel: string;
 			content: string;
 		};
-	}
-	// interface ChangeUsername {
-	// 	ChangeUsername: {
-	// 		username: string;
-	// 	};
-	// }
+		ChangeStatus: {
+			author: number;
+			afk: boolean;
+		};
+	};
+
+	const AFK_TIMEOUT = 10 * 60 * 1000;
+
+	const serverToClientMsgHandlers: Record<string, (e: any) => any> = {
+		Connected(e: { id: number }) {
+			myId = e.id;
+
+			updateStatus();
+		},
+		Disconnected(e: { id: number }) {
+			delete userStatuses[e.id];
+		},
+		ReceiveMessage(e: { author: number; channel: string; content: string }) {
+			messages.push({
+				author: e.author.toString(),
+				// channel: msg['channel'],
+				content: e.content
+			});
+
+			scrollToBottom();
+		},
+		ChangeStatus(e: { author: number; afk: boolean }) {
+			if (userStatuses[e.author]) {
+				userStatuses[e.author].afk = e.afk;
+			} else {
+				userStatuses[e.author] = {
+					afk: e.afk
+				};
+
+				if (e.author != myId) {
+					// Temporary measure to send status to the new user that connected without storing statuses on the server
+					updateStatus();
+				}
+			}
+		}
+	};
+
+	let ws: WebSocket;
 
 	let WS_URL = $page.url.hash == '' ? 'ws://127.0.0.1:6464' : $page.url.hash.slice(1);
 
@@ -32,43 +58,70 @@
 		content: string;
 	}[] = $state([]);
 
-	// let myId = -1;
+	let myId = $state<number>();
 	let channel = '# Aqui seria o nome do canal';
 
 	let myUsername = $state('meu username aqui');
 	let newMessage = $state('');
 
-	let messagesEl = $state<HTMLElement>();
-	let ws: WebSocket;
+	let isUserInPage = $state(true);
 
-	const wsHandlers: any = {
-		// Registered(e: MsgRegistered) {
-		// 	myId = e.id;
+	let changeStatusTimeout: number | null;
 
-		// 	myUsername = 'usuário ' + myId;
-		// },
-		ReceiveMessage(e: MsgReceiveMessage) {
-			messages.push({
-				author: 'usuário ' + e.author,
-				// channel: msg['channel'],
-				content: e.content
-			});
+	function updateStatus() {
+		if (!ws || ws.readyState != ws.OPEN) return;
 
-			scrollToBottom();
+		sendWsMessage('ChangeStatus', {
+			author: myId!,
+			afk: !isUserInPage
+		});
+	}
+
+	$effect(() => {
+		if (changeStatusTimeout) {
+			clearTimeout(changeStatusTimeout);
+			changeStatusTimeout = null;
 		}
-	};
+
+		// getting online is an immediate update, but we wait before marking the user as afk
+		if (isUserInPage) {
+			updateStatus();
+		} else {
+			changeStatusTimeout = setTimeout(updateStatus, AFK_TIMEOUT);
+		}
+	});
+
+	let userStatuses = $state<
+		Record<
+			string,
+			{
+				afk: boolean;
+			}
+		>
+	>({});
+
+	const orderedUserStatuses = $derived(
+		Object.entries(userStatuses)
+			.map(([id, userStatus]) => ({
+				...userStatus,
+				id
+			}))
+			.sort((a, b) => a.id.localeCompare(b.id))
+	);
+
+	let messagesEl = $state<HTMLElement>();
 
 	onMount(() => {
 		ws = new WebSocket(WS_URL);
 
 		ws.addEventListener('message', (e) => {
-			console.log('ws message: ', e.data);
+			// console.log('ws message: ', e.data);
 			const json = JSON.parse(e.data);
 
 			const type = Object.keys(json)[0];
 			const messageData = json[type];
 
-			if (wsHandlers[type]) wsHandlers[type](messageData);
+			if (serverToClientMsgHandlers[type]) serverToClientMsgHandlers[type](messageData);
 		});
 
 		return () => {
@@ -76,24 +129,30 @@
 		};
 	});
 
-	// function SendWSMessage<T, C>(type: T, content: C) {}
+	function sendWsMessage<Key extends keyof ClientToServerMsg>(
+		key: Key,
+		content: ClientToServerMsg[Key]
+	) {
+		// TODO: canonicalize this JSON
+		ws.send(
+			JSON.stringify({
+				[key]: content
+			})
+		);
+	}
 
 	async function sendMessage() {
 		if (newMessage.trim() == '') return;
 
-		messages.push({
-			author: myUsername,
-			content: newMessage
-		});
+		// messages.push({
+		// 	author: myUsername,
+		// 	content: newMessage
+		// });
 
-		ws.send(
-			JSON.stringify({
-				SendMessage: {
-					channel: channel,
-					content: newMessage.trim()
-				}
-			} satisfies MsgSendMessage)
-		);
+		sendWsMessage('SendMessage', {
+			channel: channel,
+			content: newMessage.trim()
+		});
 
 		newMessage = '';
 
@@ -119,6 +178,8 @@
 	}
 </script>
 
+<svelte:window onfocus={() => (isUserInPage = true)} onblur={() => (isUserInPage = false)} />
+
 <div class="flex w-screen">
 	<aside class="flex flex-col gap-2 border-r-2 p-2">
 		<img src="/pexe.png" alt="" class="w-16" />
@@ -130,7 +191,7 @@
 
 	<main class="flex h-screen w-full flex-col gap-2 p-4">
 		<input bind:value={myUsername} class="w-full border-2" type="text" />
-		<!-- <p>your id is {myId}</p> -->
+		<p>your id is {myId}</p>
 		<h1 class="text-xl font-bold">{channel}</h1>
 
 		<hr />
@@ -191,4 +252,16 @@
 			<button class="text-3xl">▶️</button>
 		</form>
 	</main>
+
+	<aside class="flex w-72 flex-col gap-2 border-l-2 p-2">
+		{#each orderedUserStatuses as user}
+			<div class="flex items-center gap-2">
+				<img src="/pexe.png" alt="" class="h-8 w-8" />
+
+				<div class="rounded-full {user.afk ? 'bg-yellow-500' : 'bg-green-500'}  p-1"></div>
+
+				<span class="line-clamp-1 break-all {user.afk ? 'text-slate-500' : ''}">{user.id}</span>
+			</div>
+		{/each}
+	</aside>
 </div>
