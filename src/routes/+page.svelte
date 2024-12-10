@@ -1,17 +1,6 @@
 <script lang="ts">
-	import { page } from '$app/stores';
-	import { onMount, tick } from 'svelte';
-
-	type ClientToServerMsg = {
-		SendMessage: {
-			channel: string;
-			content: string;
-		};
-		ChangeStatus: {
-			author: number;
-			afk: boolean;
-		};
-	};
+	import { onMessage, sendWsMessage, WS } from '$lib/ws';
+	import { tick } from 'svelte';
 
 	const AFK_TIMEOUT = 10 * 60 * 1000;
 
@@ -27,7 +16,6 @@
 		ReceiveMessage(e: { author: number; channel: string; content: string }) {
 			messages.push({
 				author: e.author.toString(),
-				// channel: msg['channel'],
 				content: e.content
 			});
 
@@ -49,10 +37,6 @@
 		}
 	};
 
-	let ws: WebSocket;
-
-	let WS_URL = $page.url.hash == '' ? 'ws://127.0.0.1:6464' : $page.url.hash.slice(1);
-
 	let messages: {
 		author: string;
 		content: string;
@@ -69,7 +53,7 @@
 	let changeStatusTimeout: number | null;
 
 	function updateStatus() {
-		if (!ws || ws.readyState != ws.OPEN) return;
+		if (!WS || WS.readyState != WS.OPEN) return;
 
 		sendWsMessage('ChangeStatus', {
 			author: myId!,
@@ -91,14 +75,7 @@
 		}
 	});
 
-	let userStatuses = $state<
-		Record<
-			string,
-			{
-				afk: boolean;
-			}
-		>
-	>({});
+	let userStatuses = $state<Record<string, { afk: boolean }>>({});
 
 	const orderedUserStatuses = $derived(
 		Object.entries(userStatuses)
@@ -111,43 +88,12 @@
 
 	let messagesEl = $state<HTMLElement>();
 
-	onMount(() => {
-		ws = new WebSocket(WS_URL);
-
-		ws.addEventListener('message', (e) => {
-			// console.log('ws message: ', e.data);
-			const json = JSON.parse(e.data);
-
-			const type = Object.keys(json)[0];
-			const messageData = json[type];
-
-			if (serverToClientMsgHandlers[type]) serverToClientMsgHandlers[type](messageData);
-		});
-
-		return () => {
-			ws.close();
-		};
+	onMessage(async (type, data) => {
+		if (serverToClientMsgHandlers[type]) await serverToClientMsgHandlers[type](data);
 	});
-
-	function sendWsMessage<Key extends keyof ClientToServerMsg>(
-		key: Key,
-		content: ClientToServerMsg[Key]
-	) {
-		// TODO: canonicalize this JSON
-		ws.send(
-			JSON.stringify({
-				[key]: content
-			})
-		);
-	}
 
 	async function sendMessage() {
 		if (newMessage.trim() == '') return;
-
-		// messages.push({
-		// 	author: myUsername,
-		// 	content: newMessage
-		// });
 
 		sendWsMessage('SendMessage', {
 			channel: channel,
