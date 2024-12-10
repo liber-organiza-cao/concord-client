@@ -11,9 +11,10 @@
 		iceCandidatePoolSize: 10
 	};
 
-	let audio: HTMLAudioElement;
+	let video: HTMLVideoElement;
 	let localStream = new MediaStream();
 	let remoteStream = new MediaStream();
+
 	const peerConnection = new RTCPeerConnection(servers);
 
 	const serverToClientMsgHandlers: Record<string, (e: any) => any> = {
@@ -50,7 +51,7 @@
 					remoteStream.addTrack(track);
 				});
 			});
-			audio.srcObject = remoteStream;
+			video.srcObject = remoteStream;
 		};
 
 		peerConnection.onicecandidate = async (event) => {
@@ -78,5 +79,6 @@
 
 <div>
 	<button onclick={call}>Call</button>
-	<audio bind:this={audio}></audio>
+	<!-- svelte-ignore a11y_media_has_caption -->
+	<video bind:this={video} autoplay playsinline></video>
 </div>
