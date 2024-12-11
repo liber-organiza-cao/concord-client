@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { activeVoice } from '$lib/activeVoice.svelte';
-	import { onMessage, sendWsMessage, WS } from '$lib/ws';
-	import { tick } from 'svelte';
+	import { activeVoice } from "$lib/activeVoice.svelte";
+	import { onMessage, sendWsMessage, WS } from "$lib/ws";
+	import { tick } from "svelte";
 
 	const AFK_TIMEOUT = 10 * 60 * 1000;
 
@@ -38,27 +38,27 @@
 		}
 	};
 
-	const guild = 'Server name here';
+	const guild = "Server name here";
 
 	const channelsByCategory = [
 		{
-			category: 'category here',
+			category: "category here",
 			channels: [
 				{
-					type: 'text',
-					id: 'general id',
-					name: 'general'
+					type: "text",
+					id: "general id",
+					name: "general"
 				},
 				{
-					type: 'voice',
-					id: 'voice chat id',
-					name: 'voice chat',
-					connectedUsers: ['user 1 test', 'user 2 longer name test']
+					type: "voice",
+					id: "voice chat id",
+					name: "voice chat",
+					connectedUsers: ["user 1 test", "user 2 longer name test"]
 				},
 				{
-					type: 'text',
-					id: 'test od',
-					name: 'test'
+					type: "text",
+					id: "test od",
+					name: "test"
 				}
 			]
 		}
@@ -73,8 +73,8 @@
 
 	let myId = $state<number>();
 
-	let myUsername = $state('meu username aqui');
-	let newMessage = $state('');
+	let myUsername = $state("meu username aqui");
+	let newMessage = $state("");
 
 	let isUserInPage = $state(true);
 
@@ -83,7 +83,7 @@
 	function updateStatus() {
 		if (!WS || WS.readyState != WS.OPEN) return;
 
-		sendWsMessage('ChangeStatus', {
+		sendWsMessage("ChangeStatus", {
 			author: myId!,
 			afk: !isUserInPage
 		});
@@ -121,14 +121,14 @@
 	});
 
 	async function sendMessage() {
-		if (newMessage.trim() == '') return;
+		if (newMessage.trim() == "") return;
 
-		sendWsMessage('SendMessage', {
+		sendWsMessage("SendMessage", {
 			channel: selectedTextChannel.id,
 			content: newMessage.trim()
 		});
 
-		newMessage = '';
+		newMessage = "";
 
 		scrollToBottom();
 	}
@@ -193,14 +193,14 @@
 								: 'hover:bg-gray-800'}
 							w-full p-1 pl-4 text-left {activeVoice.channel == channel.id ? 'text-white' : ''}"
 							onclick={() => {
-								if (channel.type == 'voice') {
+								if (channel.type == "voice") {
 									activeVoice.connect(guild, channel.id);
-								} else if (channel.type == 'text') {
+								} else if (channel.type == "text") {
 									selectedTextChannel = channel;
 								}
 							}}
 						>
-							{channel.type == 'text' ? '#️⃣' : '🔊'}
+							{channel.type == "text" ? "#️⃣" : "🔊"}
 							{channel.name}
 						</button>
 
@@ -250,7 +250,7 @@
 				<li
 					class="{sameAuthor ? '' : 'mt-2'} flex items-center gap-2 break-all hover:bg-gray-800"
 					oncontextmenu={(e) => {
-						if (confirm('Do you want to delete this message?')) {
+						if (confirm("Do you want to delete this message?")) {
 							e.preventDefault();
 							console.log("You've been trolled");
 						}
@@ -267,7 +267,7 @@
 							{#if !sameAuthor}
 								<p class="font-semibold">{message.author}</p>
 								<p class="text-center text-sm text-gray-400">
-									{new Date().toLocaleString('pt-br')}
+									{new Date().toLocaleString("pt-br")}
 								</p>
 							{/if}
 						</div>
@@ -287,7 +287,7 @@
 		>
 			<textarea
 				onkeydown={(e) => {
-					if (e.key == 'Enter' && !e.shiftKey) {
+					if (e.key == "Enter" && !e.shiftKey) {
 						e.preventDefault();
 						sendMessage();
 					}

@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { onMessage, sendWsMessage } from '$lib/ws';
+	import { onMount } from "svelte";
+	import { onMessage, sendWsMessage } from "$lib/ws";
 
 	const servers = {
 		iceServers: [
 			{
-				urls: ['stun:stun.l.google.com:19302']
+				urls: ["stun:stun.l.google.com:19302"]
 			}
 		],
 		iceCandidatePoolSize: 10
@@ -21,18 +21,18 @@
 		Connected(_e: { id: number }) {},
 		Disconnected(_e: { id: number }) {},
 		async Offer(e: RTCSessionDescriptionInit) {
-			console.log('recebeu offer', e);
+			console.log("recebeu offer", e);
 			await peerConnection.setRemoteDescription(e);
 			const offerDescription = await peerConnection.createAnswer();
 			peerConnection.setLocalDescription(offerDescription);
-			sendWsMessage('Answer', offerDescription);
+			sendWsMessage("Answer", offerDescription);
 		},
 		async Answer(e: RTCSessionDescriptionInit) {
-			console.log('recebeu Answer', e);
+			console.log("recebeu Answer", e);
 			await peerConnection.setRemoteDescription(e);
 		},
 		async Candidate(e: RTCIceCandidateInit) {
-			console.log('recebeu candidate', e);
+			console.log("recebeu candidate", e);
 			await peerConnection.addIceCandidate(new RTCIceCandidate(e));
 		}
 	};
@@ -45,7 +45,7 @@
 		});
 
 		peerConnection.ontrack = (event) => {
-			console.log('puta');
+			console.log("puta");
 			event.streams.forEach((stream) => {
 				stream.getTracks().forEach((track) => {
 					remoteStream.addTrack(track);
@@ -57,8 +57,8 @@
 		peerConnection.onicecandidate = async (event) => {
 			const candidate = event.candidate?.toJSON();
 			if (candidate) {
-				console.log('gerou candidate', candidate);
-				await sendWsMessage('Candidate', candidate);
+				console.log("gerou candidate", candidate);
+				await sendWsMessage("Candidate", candidate);
 			}
 		};
 	}
@@ -72,7 +72,7 @@
 	async function call() {
 		const offerDescription = await peerConnection.createOffer();
 		await peerConnection.setLocalDescription(offerDescription);
-		sendWsMessage('Offer', offerDescription);
+		sendWsMessage("Offer", offerDescription);
 		console.log(offerDescription);
 	}
 </script>
