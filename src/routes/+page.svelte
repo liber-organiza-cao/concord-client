@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { activeVoice } from '$lib/activeVoice.svelte';
 	import { onMessage, sendWsMessage, WS } from '$lib/ws';
 	import { tick } from 'svelte';
 
@@ -37,13 +38,40 @@
 		}
 	};
 
+	const guild = 'Server name here';
+
+	const channelsByCategory = [
+		{
+			category: 'category here',
+			channels: [
+				{
+					type: 'text',
+					id: 'general id',
+					name: 'general'
+				},
+				{
+					type: 'voice',
+					id: 'voice chat id',
+					name: 'voice chat',
+					connectedUsers: ['user 1 test', 'user 2 longer name test']
+				},
+				{
+					type: 'text',
+					id: 'test od',
+					name: 'test'
+				}
+			]
+		}
+	];
+
+	let selectedTextChannel = $state(channelsByCategory[0].channels[0]);
+
 	let messages: {
 		author: string;
 		content: string;
 	}[] = $state([]);
 
 	let myId = $state<number>();
-	let channel = '# Aqui seria o nome do canal';
 
 	let myUsername = $state('meu username aqui');
 	let newMessage = $state('');
@@ -96,7 +124,7 @@
 		if (newMessage.trim() == '') return;
 
 		sendWsMessage('SendMessage', {
-			channel: channel,
+			channel: selectedTextChannel.id,
 			content: newMessage.trim()
 		});
 
@@ -122,23 +150,97 @@
 
 		return messages[i - 1].author == author;
 	}
+
+	function getChannelById(channelId: string) {
+		for (const { channels } of channelsByCategory) {
+			for (const channel of channels) {
+				if (channelId == channel.id) {
+					return channel;
+				}
+			}
+		}
+
+		return null;
+	}
 </script>
 
 <svelte:window onfocus={() => (isUserInPage = true)} onblur={() => (isUserInPage = false)} />
 
-<div class="flex w-screen">
-	<aside class="flex flex-col gap-2 border-r-2 p-2">
-		<img src="/pexe.png" alt="" class="w-16" />
-		<img src="/pexe.png" alt="" class="w-16" />
-		<img src="/pexe.png" alt="" class="w-16" />
-		<img src="/pexe.png" alt="" class="w-16" />
-		<img src="/pexe.png" alt="" class="w-16" />
+<div class="flex w-screen border-gray-500 bg-gray-900">
+	<aside class="flex w-16 flex-col gap-2 border-r p-2">
+		<img src="/pexe.png" alt="" class="h-12 w-12" />
+		<img src="/pexe.png" alt="" class="h-12 w-12" />
+		<img src="/pexe.png" alt="" class="h-12 w-12" />
+		<img src="/pexe.png" alt="" class="h-12 w-12" />
+		<img src="/pexe.png" alt="" class="h-12 w-12" />
 	</aside>
 
-	<main class="flex h-screen w-full flex-col gap-2 p-4">
-		<input bind:value={myUsername} class="w-full border-2" type="text" />
-		<p>your id is {myId}</p>
-		<h1 class="text-xl font-bold">{channel}</h1>
+	<aside class="flex w-60 flex-col border-r p-2">
+		<div class="flex w-full p-2">
+			<p class="font-medium">{guild}</p>
+		</div>
+
+		<hr />
+
+		<div class="mt-2 flex grow flex-col text-gray-400">
+			{#each channelsByCategory as { category, channels }}
+				<p class="text-sm uppercase">{category}</p>
+				{#each channels as channel}
+					<div>
+						<button
+							class="{channel.id == selectedTextChannel.id
+								? 'bg-gray-700 text-white'
+								: 'hover:bg-gray-800'}
+							w-full p-1 pl-4 text-left {activeVoice.channel == channel.id ? 'text-white' : ''}"
+							onclick={() => {
+								if (channel.type == 'voice') {
+									activeVoice.connect(guild, channel.id);
+								} else if (channel.type == 'text') {
+									selectedTextChannel = channel;
+								}
+							}}
+						>
+							{channel.type == 'text' ? '#️⃣' : '🔊'}
+							{channel.name}
+						</button>
+
+						<div
+							class="pl-8 {channel.connectedUsers && channel.connectedUsers.length > 0
+								? 'mb-2'
+								: ''}"
+						>
+							{#each channel.connectedUsers ?? [] as user}
+								<button class="flex w-full items-center gap-2 p-[2px] text-left hover:bg-gray-800">
+									<img src="/pexe.png" alt="" class="h-6 w-6" />
+									<span class="line-clamp-1 text-sm">{user}</span>
+								</button>
+							{/each}
+						</div>
+					</div>
+				{/each}
+			{/each}
+		</div>
+
+		<div class="flex flex-col gap-2">
+			<hr />
+			{#if activeVoice.channel}
+				<div class="flex justify-between">
+					<div>
+						<p class="text-sm font-medium text-green-400">Voice Connected</p>
+						<p class="line-clamp-1 text-xs text-gray-400">
+							{getChannelById(activeVoice.channel)?.name} / {activeVoice.guild}
+						</p>
+					</div>
+					<button onclick={activeVoice.disconnect}>❌</button>
+				</div>
+			{/if}
+			<p class="text-center">your id is {myId}</p>
+			<input bind:value={myUsername} class="w-full border" type="text" />
+		</div>
+	</aside>
+
+	<main class="flex h-screen grow flex-col gap-2 p-4">
+		<h1 class="font-medium"># {selectedTextChannel.name}</h1>
 
 		<hr />
 
@@ -146,9 +248,7 @@
 			{#each messages as message, i}
 				{@const sameAuthor = isLastMessageSameAuthor(i, message.author)}
 				<li
-					class="{sameAuthor
-						? ''
-						: 'mt-2'} 77whitespace-pre-wrap flex items-center gap-2 hover:bg-gray-700"
+					class="{sameAuthor ? '' : 'mt-2'} flex items-center gap-2 break-all hover:bg-gray-800"
 					oncontextmenu={(e) => {
 						if (confirm('Do you want to delete this message?')) {
 							e.preventDefault();
@@ -193,20 +293,22 @@
 					}
 				}}
 				bind:value={newMessage}
-				class="w-full border-2"
+				placeholder="Message #️{selectedTextChannel.name}"
+				class="w-full border"
+				rows={2}
 			></textarea>
 			<button class="text-3xl">▶️</button>
 		</form>
 	</main>
 
-	<aside class="flex w-72 flex-col gap-2 border-l-2 p-2">
+	<aside class="flex w-60 flex-col gap-2 border-l p-2">
 		{#each orderedUserStatuses as user}
 			<div class="flex items-center gap-2">
 				<img src="/pexe.png" alt="" class="h-8 w-8" />
 
 				<div class="rounded-full {user.afk ? 'bg-yellow-500' : 'bg-green-500'}  p-1"></div>
 
-				<span class="line-clamp-1 break-all {user.afk ? 'text-slate-500' : ''}">{user.id}</span>
+				<span class="line-clamp-1 break-all {user.afk ? 'text-gray-400' : ''}">{user.id}</span>
 			</div>
 		{/each}
 	</aside>
