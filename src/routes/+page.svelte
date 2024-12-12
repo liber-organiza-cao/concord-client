@@ -3,20 +3,17 @@
 	import { connection, onWsMessage, sendWsMessage, WS } from "$lib/ws.svelte";
 	import { onMount, tick } from "svelte";
 
-	const { currentChannel, joinChannel, LeaveVoiceChannel } = voiceData;
+	const {
+		currentChannel,
+		joinChannel,
+		leaveVoiceChannel: LeaveVoiceChannel,
+		channels: voiceChannels
+	} = voiceData;
 
-	type Channel = TextChannel | VoiceChannel;
-
-	interface TextChannel {
-		type: "text";
+	interface Channel {
+		type: "text" | "voice";
 		id: string;
 		name: string;
-	}
-	interface VoiceChannel {
-		type: "voice";
-		id: string;
-		name: string;
-		connectedUsers: number[];
 	}
 
 	const AFK_TIMEOUT = 10 * 60 * 1000;
@@ -49,18 +46,6 @@
 					updateStatus();
 				}
 			}
-		},
-		JoinedVoiceChannel({ channel: channelId, id }: { channel: string; id: number }) {
-			const channel = getChannelById(channelId);
-			if (channel && channel.type == "voice") {
-				channel.connectedUsers?.push(id);
-			}
-		},
-		LeftVoiceChannel({ channel: channelId, id }: { channel: string; id: number }) {
-			const channel = getChannelById(channelId);
-			if (channel && channel.type == "voice") {
-				channel.connectedUsers = channel.connectedUsers.filter((i) => i != id);
-			}
 		}
 	};
 
@@ -71,10 +56,19 @@
 			category: "category here",
 			channels: [
 				{
+					type: "text",
+					name: "geral",
+					id: "geral"
+				},
+				{
 					type: "voice",
-					name: "é tudo puta é tudo puta2",
-					id: "puta2",
-					connectedUsers: []
+					name: "voice-chat",
+					id: "voice-chat"
+				},
+				{
+					type: "voice",
+					name: "off-topic-voz",
+					id: "off-topic-voz"
 				}
 			]
 		}
@@ -220,7 +214,7 @@
 							class="{channel.id == selectedTextChannel.id
 								? 'bg-gray-700 text-white'
 								: 'hover:bg-gray-800'}
-							w-full p-1 pl-4 text-left {currentChannel == channel.id ? 'text-white' : ''}"
+							w-full p-1 pl-4 text-left {currentChannel.id == channel.id ? 'text-white' : ''}"
 							onclick={() => {
 								if (channel.type == "voice") {
 									joinChannel(channel.id);
@@ -234,12 +228,12 @@
 						</button>
 
 						<div
-							class="pl-8 {channel.type == 'voice' && channel.connectedUsers.length > 0
+							class="pl-8 {channel.type == 'voice' && voiceChannels[channel.id]?.length > 0
 								? 'mb-2'
 								: ''}"
 						>
 							{#if channel.type == "voice"}
-								{#each channel.connectedUsers as user}
+								{#each voiceChannels[channel.id] as user}
 									<button
 										class="flex w-full items-center gap-2 p-[2px] text-left hover:bg-gray-800"
 									>
@@ -256,7 +250,7 @@
 
 		<div class="flex flex-col gap-2">
 			<hr />
-			{#if currentChannel}
+			{#if currentChannel.id}
 				<div class="flex justify-between">
 					<div>
 						<p class="text-sm font-medium text-green-400">Voice Connected</p>
