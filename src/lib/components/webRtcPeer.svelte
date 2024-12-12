@@ -85,5 +85,5 @@
 
 <div>
 	<!-- svelte-ignore a11y_media_has_caption -->
-	<video bind:this={video} autoplay playsinline controls></video>
+	<video bind:this={video} hidden autoplay playsinline controls></video>
 </div>
