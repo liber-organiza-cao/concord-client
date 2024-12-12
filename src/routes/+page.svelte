@@ -1,7 +1,23 @@
 <script lang="ts">
-	import { activeVoice, type Channel } from "$lib/voice.svelte";
+	import { voiceData } from "$lib/voice.svelte";
 	import { connection, onWsMessage, sendWsMessage, WS } from "$lib/ws.svelte";
-	import { tick } from "svelte";
+	import { onMount, tick } from "svelte";
+
+	const { currentChannel, joinChannel, LeaveVoiceChannel } = voiceData;
+
+	type Channel = TextChannel | VoiceChannel;
+
+	interface TextChannel {
+		type: "text";
+		id: string;
+		name: string;
+	}
+	interface VoiceChannel {
+		type: "voice";
+		id: string;
+		name: string;
+		connectedUsers: number[];
+	}
 
 	const AFK_TIMEOUT = 10 * 60 * 1000;
 
@@ -56,8 +72,8 @@
 			channels: [
 				{
 					type: "voice",
-					name: "é tudo puta é tudo puta",
-					id: "puta",
+					name: "é tudo puta é tudo puta2",
+					id: "puta2",
 					connectedUsers: []
 				}
 			]
@@ -131,6 +147,18 @@
 		scrollToBottom();
 	}
 
+	async function getUserMedia() {
+		try {
+			voiceData.localStream = await navigator.mediaDevices.getUserMedia({
+				video: false,
+				audio: true
+			});
+		} catch (e) {
+			console.error(e);
+			await getUserMedia();
+		}
+	}
+
 	async function scrollToBottom() {
 		await tick();
 
@@ -160,6 +188,9 @@
 
 		return null;
 	}
+	onMount(() => {
+		getUserMedia();
+	});
 </script>
 
 <svelte:window onfocus={() => (isUserInPage = true)} onblur={() => (isUserInPage = false)} />
@@ -189,10 +220,10 @@
 							class="{channel.id == selectedTextChannel.id
 								? 'bg-gray-700 text-white'
 								: 'hover:bg-gray-800'}
-							w-full p-1 pl-4 text-left {activeVoice.channel == channel.id ? 'text-white' : ''}"
+							w-full p-1 pl-4 text-left {currentChannel == channel.id ? 'text-white' : ''}"
 							onclick={() => {
 								if (channel.type == "voice") {
-									activeVoice.connect(guild, channel.id);
+									joinChannel(channel.id);
 								} else if (channel.type == "text") {
 									selectedTextChannel = channel;
 								}
@@ -225,15 +256,13 @@
 
 		<div class="flex flex-col gap-2">
 			<hr />
-			{#if activeVoice.channel}
+			{#if currentChannel}
 				<div class="flex justify-between">
 					<div>
 						<p class="text-sm font-medium text-green-400">Voice Connected</p>
-						<p class="line-clamp-1 text-xs text-gray-400">
-							{getChannelById(activeVoice.channel)?.name} / {activeVoice.guild}
-						</p>
+						<p class="line-clamp-1 text-xs text-gray-400"></p>
 					</div>
-					<button onclick={activeVoice.disconnect}>❌</button>
+					<button onclick={LeaveVoiceChannel}>❌</button>
 				</div>
 			{/if}
 			<p class="text-center">your id is {connection.id}</p>

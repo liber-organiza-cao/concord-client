@@ -1,21 +1,21 @@
 <script>
-	import { activeVoice, voiceChannelPeers } from "$lib/voice.svelte";
-	import WebRtcConnect from "$lib/components/webRtcConnect.svelte";
-	import "../app.css";
+	import WebRtcPeer from "$lib/components/webRtcPeer.svelte";
+	import { voiceData } from "$lib/voice.svelte";
 	import { connection } from "$lib/ws.svelte";
+	import "../app.css";
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('svelte').Snippet} [children]
 	 */
-
 	/** @type {Props} */
 	let { children } = $props();
 </script>
 
-{#each activeVoice.connectedUsers ?? [] as id}
-	{#if id != connection.id}
-		<WebRtcConnect {id} />
-	{/if}
-{/each}
-
+<div>
+	{#each voiceData.voicePeers ?? [] as peerId}
+		{#if peerId != connection.id}
+			<WebRtcPeer {peerId} />
+		{/if}
+	{/each}
+</div>
 {@render children?.()}
