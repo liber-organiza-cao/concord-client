@@ -10,12 +10,23 @@ export type ClientToServerMsg = {
 		author: number;
 		afk: boolean;
 	};
-	Offer: RTCSessionDescriptionInit;
-	Answer: RTCSessionDescriptionInit;
-	Candidate: RTCIceCandidateInit;
+	Offer: Tid<RTCSessionDescriptionInit>;
+	Answer: Tid<RTCSessionDescriptionInit>;
+	Candidate: Tid<RTCIceCandidateInit>;
+	JoinVoiceChannel: { channel: string }
+	LeaveVoiceChannel: { channel: string }
+};
+
+export type Tid<T> = {
+	id: number,
+	data: T
 };
 
 export const WS = new WebSocket(url);
+
+export let connection = $state({
+	id: 0
+});
 
 export function sendWsMessage<Key extends keyof ClientToServerMsg>(
 	key: Key,
@@ -24,7 +35,7 @@ export function sendWsMessage<Key extends keyof ClientToServerMsg>(
 	return WS.send(JSON.stringify({ [key]: content }));
 }
 
-export function onMessage(callback: (type: string, data: unknown) => void) {
+export function onWsMessage(callback: (type: string, data: unknown) => void) {
 	WS.addEventListener("message", (e) => {
 		const json = JSON.parse(e.data);
 
@@ -34,3 +45,10 @@ export function onMessage(callback: (type: string, data: unknown) => void) {
 		callback(type, data);
 	});
 }
+
+onWsMessage((type, data) => {
+	if (type == "Connected") {
+		const { id } = data as { id: number };
+		connection.id = id;
+	}
+});

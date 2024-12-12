@@ -1,14 +1,12 @@
 <script lang="ts">
-	import { activeVoice } from "$lib/activeVoice.svelte";
-	import { onMessage, sendWsMessage, WS } from "$lib/ws";
+	import { activeVoice, type Channel } from "$lib/voice.svelte";
+	import { connection, onWsMessage, sendWsMessage, WS } from "$lib/ws.svelte";
 	import { tick } from "svelte";
 
 	const AFK_TIMEOUT = 10 * 60 * 1000;
 
 	const serverToClientMsgHandlers: Record<string, (e: any) => any> = {
 		Connected(e: { id: number }) {
-			myId = e.id;
-
 			updateStatus();
 		},
 		Disconnected(e: { id: number }) {
@@ -30,39 +28,41 @@
 					afk: e.afk
 				};
 
-				if (e.author != myId) {
+				if (e.author != connection.id) {
 					// Temporary measure to send status to the new user that connected without storing statuses on the server
 					updateStatus();
 				}
+			}
+		},
+		JoinedVoiceChannel({ channel: channelId, id }: { channel: string; id: number }) {
+			const channel = getChannelById(channelId);
+			if (channel && channel.type == "voice") {
+				channel.connectedUsers?.push(id);
+			}
+		},
+		LeftVoiceChannel({ channel: channelId, id }: { channel: string; id: number }) {
+			const channel = getChannelById(channelId);
+			if (channel && channel.type == "voice") {
+				channel.connectedUsers = channel.connectedUsers.filter((i) => i != id);
 			}
 		}
 	};
 
 	const guild = "Server name here";
 
-	const channelsByCategory = [
+	const channelsByCategory = $state<{ category: string; channels: Channel[] }[]>([
 		{
 			category: "category here",
 			channels: [
 				{
-					type: "text",
-					id: "general id",
-					name: "general"
-				},
-				{
 					type: "voice",
-					id: "voice chat id",
-					name: "voice chat",
-					connectedUsers: ["user 1 test", "user 2 longer name test"]
-				},
-				{
-					type: "text",
-					id: "test od",
-					name: "test"
+					name: "é tudo puta é tudo puta",
+					id: "puta",
+					connectedUsers: []
 				}
 			]
 		}
-	];
+	]);
 
 	let selectedTextChannel = $state(channelsByCategory[0].channels[0]);
 
@@ -70,8 +70,6 @@
 		author: string;
 		content: string;
 	}[] = $state([]);
-
-	let myId = $state<number>();
 
 	let myUsername = $state("meu username aqui");
 	let newMessage = $state("");
@@ -84,7 +82,7 @@
 		if (!WS || WS.readyState != WS.OPEN) return;
 
 		sendWsMessage("ChangeStatus", {
-			author: myId!,
+			author: connection.id!,
 			afk: !isUserInPage
 		});
 	}
@@ -116,7 +114,7 @@
 
 	let messagesEl = $state<HTMLElement>();
 
-	onMessage(async (type, data) => {
+	onWsMessage(async (type, data) => {
 		if (serverToClientMsgHandlers[type]) await serverToClientMsgHandlers[type](data);
 	});
 
@@ -205,16 +203,20 @@
 						</button>
 
 						<div
-							class="pl-8 {channel.connectedUsers && channel.connectedUsers.length > 0
+							class="pl-8 {channel.type == 'voice' && channel.connectedUsers.length > 0
 								? 'mb-2'
 								: ''}"
 						>
-							{#each channel.connectedUsers ?? [] as user}
-								<button class="flex w-full items-center gap-2 p-[2px] text-left hover:bg-gray-800">
-									<img src="/pexe.png" alt="" class="h-6 w-6" />
-									<span class="line-clamp-1 text-sm">{user}</span>
-								</button>
-							{/each}
+							{#if channel.type == "voice"}
+								{#each channel.connectedUsers as user}
+									<button
+										class="flex w-full items-center gap-2 p-[2px] text-left hover:bg-gray-800"
+									>
+										<img src="/pexe.png" alt="" class="h-6 w-6" />
+										<span class="line-clamp-1 text-sm">{user}</span>
+									</button>
+								{/each}
+							{/if}
 						</div>
 					</div>
 				{/each}
@@ -234,7 +236,7 @@
 					<button onclick={activeVoice.disconnect}>❌</button>
 				</div>
 			{/if}
-			<p class="text-center">your id is {myId}</p>
+			<p class="text-center">your id is {connection.id}</p>
 			<input bind:value={myUsername} class="w-full border" type="text" />
 		</div>
 	</aside>
