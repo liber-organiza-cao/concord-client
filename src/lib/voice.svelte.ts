@@ -1,4 +1,5 @@
 import { connection, onWsMessage, sendWsMessage } from "$lib/ws.svelte";
+import { tick } from "svelte";
 
 export const voiceData = (() => {
 	const servers = {
@@ -55,7 +56,10 @@ export const voiceData = (() => {
 	async function joinChannel(channel: string) {
 		if (currentChannel.id == channel) return;
 
-		if (currentChannel.id) leaveVoiceChannel();
+		if (currentChannel.id) {
+			leaveVoiceChannel();
+			await tick();
+		}
 
 		currentChannel.id = channel;
 		sendWsMessage("JoinVoiceChannel", { channel });
