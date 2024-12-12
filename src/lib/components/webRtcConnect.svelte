@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { connection, onWsMessage, sendWsMessage, type Tid } from "$lib/ws.svelte";
+	import { onWsMessage, sendWsMessage, type Tid } from "$lib/ws.svelte";
 	import { onMount } from "svelte";
 	import { push } from "./toast.svelte";
+	import { activeVoice, newlyJoinedPeers } from "$lib/voice.svelte";
 
 	const servers = {
 		iceServers: [{ urls: ["stun:stun.l.google.com:19302"] }]
@@ -39,21 +40,18 @@
 		}
 	};
 
-	async function getUserMedia() {
-		try {
-			localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-			localStream.getTracks().forEach((track) => {
-				peerConnection.addTrack(track, localStream!);
-			});
-		} catch (e) {
-			push("por favor de permissão");
-			console.log(e);
-			await getUserMedia();
-		}
-	}
+	// async function getUserMedia() {
+	// 	try {
+
+	// 	} catch (e) {
+	// 		push("por favor de permissão");
+	// 		console.log(e);
+	// 		await getUserMedia();
+	// 	}
+	// }
 
 	async function createOffer() {
-		const offerDescription = await peerConnection.createOffer({ offerToReceiveAudio: true });
+		const offerDescription = await peerConnection.createOffer();
 		await peerConnection.setLocalDescription(offerDescription);
 		console.log("[createOffer]: ", offerDescription);
 		sendWsMessage("Offer", { id, data: offerDescription });
@@ -63,9 +61,15 @@
 		if (onMsgHandlers[type]) await onMsgHandlers[type](data);
 	});
 
-	onMount(() => {
+	async function setup() {
 		console.log("criou webRtcConnection", id);
-		getUserMedia();
+
+		localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+
+		localStream.getTracks().forEach((track) => {
+			peerConnection.addTrack(track, localStream!);
+		});
+
 		peerConnection.onconnectionstatechange = () => {
 			console.log("[onconnectionstatechange]: ", peerConnection.connectionState);
 		};
@@ -86,11 +90,24 @@
 				sendWsMessage("Candidate", { id, data: candidate });
 			}
 		};
-		if (id > connection.id) createOffer();
+
+		if (newlyJoinedPeers.includes(id)) {
+			console.log("vai rodar createOffer");
+			createOffer();
+
+			newlyJoinedPeers.splice(newlyJoinedPeers.indexOf(id), 1);
+		}
+	}
+
+	onMount(() => {
+		setup();
+
+		return () => {
+			console.log("close");
+			peerConnection.close();
+		};
 	});
 </script>
 
-<div>
-	<!-- svelte-ignore a11y_media_has_caption -->
-	<video bind:this={video} autoplay playsinline></video>
-</div>
+<!-- svelte-ignore a11y_media_has_caption -->
+<video bind:this={video} autoplay playsinline hidden oncanplay={() => video.play()}></video>

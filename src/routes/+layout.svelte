@@ -10,21 +10,12 @@
 
 	/** @type {Props} */
 	let { children } = $props();
-
-	$effect(() => {
-		console.log(voiceChannelPeers.channels);
-		console.log(activeVoice.connectedUsers);
-	});
 </script>
 
-<div>
-	{#if activeVoice.isConnected()}
-		{#each activeVoice.connectedUsers ?? [] as id}
-			{#if id != connection.id}
-				<WebRtcConnect {id} />
-			{/if}
-		{/each}
+{#each activeVoice.connectedUsers ?? [] as id}
+	{#if id != connection.id}
+		<WebRtcConnect {id} />
 	{/if}
-</div>
+{/each}
 
 {@render children?.()}
