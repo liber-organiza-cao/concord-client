@@ -64,7 +64,7 @@
 	});
 
 	onMount(() => {
-		console.log("ssss", id);
+		console.log("criou webRtcConnection", id);
 		getUserMedia();
 		peerConnection.ontrack = (event) => {
 			event.streams.forEach((stream) => {
