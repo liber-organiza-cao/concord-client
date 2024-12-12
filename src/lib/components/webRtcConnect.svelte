@@ -23,7 +23,7 @@
 			const offerDescription = await peerConnection.createAnswer();
 			peerConnection.setLocalDescription(offerDescription);
 			console.log("criou Answer");
-			sendWsMessage("Answer", { id, data: offerDescription });
+			sendWsMessage("Answer", { id: otherPeerId, data: offerDescription });
 		},
 		async Answer({ id: otherPeerId, data }: Tid<RTCSessionDescriptionInit>) {
 			if (otherPeerId != id) return;
@@ -53,7 +53,7 @@
 	}
 
 	async function createOffer() {
-		const offerDescription = await peerConnection.createOffer();
+		const offerDescription = await peerConnection.createOffer({ offerToReceiveAudio: true });
 		await peerConnection.setLocalDescription(offerDescription);
 		console.log("[createOffer]: ", offerDescription);
 		sendWsMessage("Offer", { id, data: offerDescription });
@@ -66,7 +66,11 @@
 	onMount(() => {
 		console.log("criou webRtcConnection", id);
 		getUserMedia();
+		peerConnection.onconnectionstatechange = () => {
+			console.log("[onconnectionstatechange]: ", peerConnection.connectionState);
+		};
 		peerConnection.ontrack = (event) => {
+			console.log("[ontrack]: ", event);
 			event.streams.forEach((stream) => {
 				stream.getTracks().forEach((track) => {
 					remoteStream.addTrack(track);
@@ -78,7 +82,8 @@
 		peerConnection.onicecandidate = async (event) => {
 			const candidate = event.candidate?.toJSON();
 			if (candidate) {
-				await sendWsMessage("Candidate", { id, data: candidate });
+				console.log("[onicecandidate]: ", candidate);
+				sendWsMessage("Candidate", { id, data: candidate });
 			}
 		};
 		if (id > connection.id) createOffer();
