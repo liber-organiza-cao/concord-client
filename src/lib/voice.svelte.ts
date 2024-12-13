@@ -65,9 +65,14 @@ export const voiceData = (() => {
 		sendWsMessage("JoinVoiceChannel", { channel });
 	}
 
+	async function getUserMedia(constraints: MediaStreamConstraints) {
+		localStream = await navigator.mediaDevices.getUserMedia(constraints);
+	}
+
 	return {
 		leaveVoiceChannel,
 		joinVoiceChannel,
+		getUserMedia,
 		get voiceChannels() {
 			return voiceChannels;
 		},
@@ -85,10 +90,6 @@ export const voiceData = (() => {
 		},
 		get offerQueue() {
 			return offerQueue;
-		},
-
-		set localStream(v: typeof localStream) {
-			localStream = v;
 		},
 	};
 })();

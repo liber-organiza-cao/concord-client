@@ -1,14 +1,9 @@
 <script lang="ts">
 	import { voiceData } from "$lib/voice.svelte";
 	import { connection, onWsMessage, sendWsMessage, WS } from "$lib/ws.svelte";
-	import { onMount, tick } from "svelte";
+	import { tick } from "svelte";
 
-	const {
-		currentChannel,
-		joinVoiceChannel,
-		leaveVoiceChannel,
-		voiceChannels
-	} = voiceData;
+	const { currentChannel, joinVoiceChannel, leaveVoiceChannel, voiceChannels } = voiceData;
 
 	interface Channel {
 		type: "text" | "voice";
@@ -142,18 +137,6 @@
 		scrollToBottom();
 	}
 
-	async function getUserMedia() {
-		try {
-			voiceData.localStream = await navigator.mediaDevices.getUserMedia({
-				video: false,
-				audio: true
-			});
-		} catch (e) {
-			console.error(e);
-			await getUserMedia();
-		}
-	}
-
 	async function scrollToBottom() {
 		await tick();
 
@@ -175,10 +158,6 @@
 
 		return messages[i - 1].author == author;
 	}
-
-	onMount(() => {
-		getUserMedia();
-	});
 </script>
 
 <svelte:window onfocus={() => (isUserInPage = true)} onblur={() => (isUserInPage = false)} />
