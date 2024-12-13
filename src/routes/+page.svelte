@@ -129,11 +129,12 @@
 	});
 
 	async function sendMessage() {
-		if (newMessage.trim() == "") return;
+		const content = newMessage.trimStart().trimEnd();
+		if (content == "") return;
 
 		sendWsMessage("SendMessage", {
 			channel: selectedTextChannel.id,
-			content: newMessage.trim()
+			content
 		});
 
 		newMessage = "";
@@ -189,7 +190,7 @@
 
 <svelte:window onfocus={() => (isUserInPage = true)} onblur={() => (isUserInPage = false)} />
 
-<div class="flex w-screen border-gray-500 bg-gray-900">
+<div class="grid w-screen grid-cols-[auto_auto_1fr_auto] border-gray-500 bg-gray-900">
 	<aside class="flex w-16 flex-col gap-2 border-r p-2">
 		<img src="/pexe.png" alt="" class="h-12 w-12" />
 		<img src="/pexe.png" alt="" class="h-12 w-12" />
@@ -264,7 +265,7 @@
 		</div>
 	</aside>
 
-	<main class="flex h-screen grow flex-col gap-2 p-4">
+	<main class="flex h-screen flex-col gap-2 p-4">
 		<h1 class="font-medium"># {selectedTextChannel.name}</h1>
 
 		<hr />
@@ -281,9 +282,7 @@
 						}
 					}}
 				>
-					{#if sameAuthor}
-						<span class="w-10"></span>
-					{:else}
+					{#if !sameAuthor}
 						<img src="/pexe.png" alt="" class="h-10 w-10" />
 					{/if}
 
@@ -296,7 +295,9 @@
 								</p>
 							{/if}
 						</div>
-						<p>{message.content}</p>
+						<span class="whitespace-pre-wrap break-all {sameAuthor ? 'ml-12' : ''}"
+							>{message.content}</span
+						>
 					</span>
 				</li>
 			{/each}
