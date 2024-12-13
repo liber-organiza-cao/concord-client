@@ -157,13 +157,17 @@
 	async function scrollToBottom() {
 		await tick();
 
-		const tolerance = 50;
+		const last = messagesEl!.lastElementChild;
 
-		if (messagesEl!.clientHeight + messagesEl!.scrollTop + tolerance < messagesEl!.scrollHeight)
+		if (!last) return;
+
+		if (
+			messagesEl!.clientHeight + messagesEl!.scrollTop + last.clientHeight <
+			messagesEl!.scrollHeight
+		)
 			return;
 
-		const last = messagesEl!.lastElementChild;
-		if (last) last.scrollIntoView();
+		last.scrollIntoView();
 	}
 
 	function isLastMessageSameAuthor(i: number, author: string) {
