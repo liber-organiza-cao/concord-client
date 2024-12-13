@@ -5,9 +5,9 @@
 
 	const {
 		currentChannel,
-		joinChannel,
-		leaveVoiceChannel: LeaveVoiceChannel,
-		channels: voiceChannels
+		joinVoiceChannel,
+		leaveVoiceChannel,
+		voiceChannels
 	} = voiceData;
 
 	interface Channel {
@@ -211,7 +211,7 @@
 							w-full p-1 pl-4 text-left {currentChannel.id == channel.id ? 'text-white' : ''}"
 							onclick={() => {
 								if (channel.type == "voice") {
-									joinChannel(channel.id);
+									joinVoiceChannel(channel.id);
 								} else if (channel.type == "text") {
 									selectedTextChannel = channel;
 								}
@@ -250,7 +250,7 @@
 						<p class="text-sm font-medium text-green-400">Voice Connected</p>
 						<p class="line-clamp-1 text-xs text-gray-400"></p>
 					</div>
-					<button onclick={LeaveVoiceChannel}>❌</button>
+					<button onclick={leaveVoiceChannel}>❌</button>
 				</div>
 			{/if}
 			<p class="text-center">your id is {connection.id}</p>

@@ -2,14 +2,14 @@ import { connection, onWsMessage, sendWsMessage } from "$lib/ws.svelte";
 import { tick } from "svelte";
 
 export const voiceData = (() => {
-	const servers = {
+	const servers: RTCConfiguration = {
 		iceServers: [{ urls: ["stun:stun.l.google.com:19302"] }],
 		iceCandidatePoolSize: 10
 	};
-	const channels = $state<Record<string, number[]>>({});
-	let offerQueue = $state<number[]>([]);
-	let currentChannel = $state({ id: "" });
-	const voicePeers = $derived(channels[currentChannel.id]);
+	const voiceChannels = $state<Record<string, number[]>>({});
+	const offerQueue = $state<number[]>([]);
+	const currentChannel = $state({ id: "" });
+	const voicePeers = $derived(voiceChannels[currentChannel.id]);
 	let localStream = new MediaStream();
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -17,11 +17,11 @@ export const voiceData = (() => {
 		async JoinedVoiceChannel(msgData: { channel: string; id: number }) {
 			const { id, channel: channelName } = msgData;
 			console.log("[JoinedVoiceChannel], ", channelName, id);
-			const peers = channels[channelName];
+			const peers = voiceChannels[channelName];
 			if (peers) {
 				peers.push(id);
 			} else {
-				channels[channelName] = [id];
+				voiceChannels[channelName] = [id];
 			}
 			if (id != connection.id && channelName == currentChannel.id) {
 				console.log("push to offerQueue id: ", id);
@@ -31,7 +31,7 @@ export const voiceData = (() => {
 		async LeftVoiceChannel(msgData: { channel: string; id: number }) {
 			const { id, channel: channelName } = msgData;
 			console.log("[LeftVoiceChannel], ", channelName, id);
-			const peers = channels[channelName];
+			const peers = voiceChannels[channelName];
 			if (peers) {
 				const index = peers.indexOf(id);
 				if (index > -1) peers.splice(index, 1);
@@ -53,7 +53,7 @@ export const voiceData = (() => {
 		currentChannel.id = "";
 	}
 
-	async function joinChannel(channel: string) {
+	async function joinVoiceChannel(channel: string) {
 		if (currentChannel.id == channel) return;
 
 		if (currentChannel.id) {
@@ -67,9 +67,9 @@ export const voiceData = (() => {
 
 	return {
 		leaveVoiceChannel,
-		joinChannel,
-		get channels() {
-			return channels;
+		joinVoiceChannel,
+		get voiceChannels() {
+			return voiceChannels;
 		},
 		get servers() {
 			return servers;
@@ -90,11 +90,5 @@ export const voiceData = (() => {
 		set localStream(v: typeof localStream) {
 			localStream = v;
 		},
-		set currentChannel(v: typeof currentChannel) {
-			currentChannel = v;
-		},
-		set offerQueue(v: typeof offerQueue) {
-			offerQueue = v;
-		}
 	};
 })();
