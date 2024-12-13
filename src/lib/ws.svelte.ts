@@ -1,5 +1,7 @@
-export const url =
-	window.location.hash.length == 0 ? "ws://127.0.0.1:6464" : window.location.hash.slice(1);
+import { PUBLIC_API_URL } from '$env/static/public';
+export const url = PUBLIC_API_URL ? PUBLIC_API_URL : window.location.hash.length == 0 ? "ws://127.0.0.1:6464" : window.location.hash.slice(1);
+
+console.log(`api url: ${url}`);
 
 export type ClientToServerMsg = {
 	SendMessage: {
