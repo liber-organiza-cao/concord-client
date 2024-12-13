@@ -49,20 +49,20 @@ export const voiceData = (() => {
 
 	async function leaveVoiceChannel() {
 		sendWsMessage("LeaveVoiceChannel", { channel: currentChannel.id });
-
 		currentChannel.id = "";
+		offerQueue.length = 0;
+		await tick();
 	}
 
 	async function joinVoiceChannel(channel: string) {
 		if (currentChannel.id == channel) return;
 
 		if (currentChannel.id) {
-			leaveVoiceChannel();
-			await tick();
+			await leaveVoiceChannel();
 		}
-
 		currentChannel.id = channel;
 		sendWsMessage("JoinVoiceChannel", { channel });
+		await tick();
 	}
 
 	async function getUserMedia(constraints: MediaStreamConstraints) {
