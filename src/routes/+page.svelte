@@ -176,17 +176,6 @@
 		return messages[i - 1].author == author;
 	}
 
-	function getChannelById(channelId: string) {
-		for (const { channels } of channelsByCategory) {
-			for (const channel of channels) {
-				if (channelId == channel.id) {
-					return channel;
-				}
-			}
-		}
-
-		return null;
-	}
 	onMount(() => {
 		getUserMedia();
 	});

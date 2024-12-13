@@ -24,7 +24,7 @@ export type Tid<T> = {
 
 export const WS = new WebSocket(url);
 
-export let connection = $state({
+export const connection = $state({
 	id: 0
 });
 
