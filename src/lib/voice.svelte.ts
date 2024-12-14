@@ -3,8 +3,31 @@ import { tick } from "svelte";
 
 export const voiceData = (() => {
 	const servers: RTCConfiguration = {
-		iceServers: [{ urls: ["stun:stun.l.google.com:19302"] }],
-		iceCandidatePoolSize: 10
+		iceServers: [
+			{
+				urls: "stun:stun.relay.metered.ca:80",
+			},
+			{
+				urls: "turn:standard.relay.metered.ca:80",
+				username: "9df5a10a093ff890b8cb9dac",
+				credential: "U7oguQTnz/ciUWtd",
+			},
+			{
+				urls: "turn:standard.relay.metered.ca:80?transport=tcp",
+				username: "9df5a10a093ff890b8cb9dac",
+				credential: "U7oguQTnz/ciUWtd",
+			},
+			{
+				urls: "turn:standard.relay.metered.ca:443",
+				username: "9df5a10a093ff890b8cb9dac",
+				credential: "U7oguQTnz/ciUWtd",
+			},
+			{
+				urls: "turns:standard.relay.metered.ca:443?transport=tcp",
+				username: "9df5a10a093ff890b8cb9dac",
+				credential: "U7oguQTnz/ciUWtd",
+			},
+		],
 	};
 	const voiceChannels = $state<Record<string, number[]>>({});
 	const offerQueue = $state<number[]>([]);
