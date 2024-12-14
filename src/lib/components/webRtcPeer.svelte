@@ -15,34 +15,34 @@
 		async Offer({ id: otherPeerId, data }: Tid<RTCSessionDescriptionInit>) {
 			if (otherPeerId != peerId) return;
 
-			console.log(`[receive Offer]: peerId: ${peerId}, data: ${data}`);
+			console.log(`[receive Offer]: peerId: ${peerId}, data: ${JSON.stringify(data)}`);
 			await peerConnection.setRemoteDescription(data);
 			await createAnswer();
 		},
 		async Answer({ id: otherPeerId, data }: Tid<RTCSessionDescriptionInit>) {
 			if (otherPeerId != peerId) return;
 
-			console.log(`[receive Answer]: peerId: ${peerId}, data: ${data}`);
+			console.log(`[receive Answer]: peerId: ${peerId}, data: ${JSON.stringify(data)}`);
 			await peerConnection.setRemoteDescription(data);
 		},
 		async Candidate({ id: otherPeerId, data }: Tid<RTCIceCandidateInit>) {
 			if (otherPeerId != peerId) return;
 
-			console.log(`[receive Candidate]: peerId: ${peerId}, data: ${data}`);
+			console.log(`[receive Candidate]: peerId: ${peerId}, data: ${JSON.stringify(data)}`);
 			await peerConnection.addIceCandidate(new RTCIceCandidate(data));
 		}
 	};
 
 	async function createOffer() {
 		const data = await peerConnection.createOffer();
-		console.log(`[create Offer]: peerId: ${peerId}, data: ${data}`);
+		console.log(`[create Offer]: peerId: ${peerId}, data: ${JSON.stringify(data)}`);
 		peerConnection.setLocalDescription(data);
 		sendWsMessage("Offer", { id: peerId, data });
 	}
 
 	async function createAnswer() {
 		const data = await peerConnection.createAnswer();
-		console.log(`[create Answer]: peerId: ${peerId}, data: ${data}`);
+		console.log(`[create Answer]: peerId: ${peerId}, data: ${JSON.stringify(data)}`);
 		peerConnection.setLocalDescription(data);
 		sendWsMessage("Answer", { id: peerId, data });
 	}
@@ -60,7 +60,7 @@
 		peerConnection.onicecandidate = (event) => {
 			const data = event.candidate?.toJSON();
 			if (data) {
-				console.log(`[create Candidate]: peerId: ${peerId}, data: ${data}`);
+				console.log(`[create Candidate]: peerId: ${peerId}, data: ${JSON.stringify(data)}`);
 				sendWsMessage("Candidate", { id: peerId, data });
 			}
 		};
