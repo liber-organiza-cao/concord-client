@@ -29,7 +29,7 @@
 			if (otherPeerId != peerId) return;
 
 			console.log(`[receive Candidate]: peerId: ${peerId}, data: ${JSON.stringify(data)}`);
-			await peerConnection.addIceCandidate(new RTCIceCandidate(data));
+			await peerConnection.addIceCandidate(data);
 		}
 	};
 
