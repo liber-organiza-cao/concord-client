@@ -68,6 +68,12 @@
 			}
 		};
 
+		peerConnection.onconnectionstatechange = () => {
+			console.log(
+				`[onconnectionstatechange]: ${peerConnection.connectionState}, peerId: ${peerId}`
+			);
+		};
+
 		localStream.getTracks().forEach((track) => {
 			peerConnection.addTrack(track, localStream!);
 		});

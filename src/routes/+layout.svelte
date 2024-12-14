@@ -32,7 +32,7 @@
 </script>
 
 <div>
-	{#key voiceData.currentChannel}
+	{#key voiceData.currentChannel.id}
 		{#each voiceData.voicePeers ?? [] as peerId}
 			{#if peerId != connection.id}
 				<WebRtcPeer {peerId} />
