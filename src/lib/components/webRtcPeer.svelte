@@ -15,34 +15,34 @@
 		async Offer({ id: otherPeerId, data }: Tid<RTCSessionDescriptionInit>) {
 			if (otherPeerId != peerId) return;
 
-			console.log("[receive Offer]", data);
+			console.log(`[receive Offer]: peerId: ${peerId}, data: ${data}`);
 			await peerConnection.setRemoteDescription(data);
 			await createAnswer();
 		},
 		async Answer({ id: otherPeerId, data }: Tid<RTCSessionDescriptionInit>) {
 			if (otherPeerId != peerId) return;
 
-			console.log("[receive Answer]", data);
+			console.log(`[receive Answer]: peerId: ${peerId}, data: ${data}`);
 			await peerConnection.setRemoteDescription(data);
 		},
 		async Candidate({ id: otherPeerId, data }: Tid<RTCIceCandidateInit>) {
 			if (otherPeerId != peerId) return;
 
-			console.log("[receive Candidate]", data);
+			console.log(`[receive Candidate]: peerId: ${peerId}, data: ${data}`);
 			await peerConnection.addIceCandidate(new RTCIceCandidate(data));
 		}
 	};
 
 	async function createOffer() {
 		const data = await peerConnection.createOffer();
-		console.log("[create Offer]", data);
+		console.log(`[create Offer]: peerId: ${peerId}, data: ${data}`);
 		peerConnection.setLocalDescription(data);
 		sendWsMessage("Offer", { id: peerId, data });
 	}
 
 	async function createAnswer() {
 		const data = await peerConnection.createAnswer();
-		console.log("[create Answer]", data);
+		console.log(`[create Answer]: peerId: ${peerId}, data: ${data}`);
 		peerConnection.setLocalDescription(data);
 		sendWsMessage("Answer", { id: peerId, data });
 	}
@@ -58,19 +58,16 @@
 		};
 
 		peerConnection.onicecandidate = (event) => {
-			const candidate = event.candidate?.toJSON();
-			if (candidate) {
-				console.log("[create Candidate]: ", candidate);
-				sendWsMessage("Candidate", {
-					id: peerId,
-					data: candidate
-				});
+			const data = event.candidate?.toJSON();
+			if (data) {
+				console.log(`[create Candidate]: peerId: ${peerId}, data: ${data}`);
+				sendWsMessage("Candidate", { id: peerId, data });
 			}
 		};
 
 		peerConnection.onconnectionstatechange = () => {
 			console.log(
-				`[onconnectionstatechange]: ${peerConnection.connectionState}, peerId: ${peerId}`
+				`[onconnectionstatechange]: peerId: ${peerId}, ${peerConnection.connectionState}`
 			);
 		};
 
