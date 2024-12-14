@@ -29,6 +29,9 @@ export const voiceData = (() => {
 			},
 		],
 	};
+
+	console.log(`[webrtcServers]: ${JSON.stringify(servers)}`);
+
 	const voiceChannels = $state<Record<string, number[]>>({});
 	const offerQueue = $state<number[]>([]);
 	const currentChannel = $state({ id: "" });
