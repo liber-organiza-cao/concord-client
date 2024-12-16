@@ -6,13 +6,11 @@
 	@apply border-inherit;
 }
 
-body,
 input,
 textarea {
-	@apply border-white bg-inherit text-white;
+	@apply rounded-md border-inherit bg-gray-900 bg-inherit p-2;
 }
 
-input,
-textarea {
-	@apply rounded-md border-inherit p-2;
+body {
+	@apply border-gray-500 bg-gray-900 text-white;
 }

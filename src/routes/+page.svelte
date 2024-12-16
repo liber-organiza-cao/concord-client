@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { voiceData } from "$lib/voice.svelte";
-	import { connection, onWsMessage, sendWsMessage, WS } from "$lib/ws.svelte";
+	import { connection, connIdToPubkeyMap, onWsMessage, sendWsMessage, WS } from "$lib/ws.svelte";
 	import { tick } from "svelte";
+	import { SvelteMap } from "svelte/reactivity";
 
 	const { currentChannel, joinVoiceChannel, leaveVoiceChannel, voiceChannels } = voiceData;
 
@@ -18,29 +19,38 @@
 			updateStatus();
 		},
 		Disconnected(e: { id: number }) {
-			delete userStatuses[e.id];
+			userStatuses.delete(e.id);
 		},
-		ReceiveMessage(e: { author: number; channel: string; content: string }) {
+		MessageSent(e: { author: string; channel: string; content: string }) {
+			console.log("salkjdlasjd", e);
 			messages.push({
-				author: e.author.toString(),
+				author: e.author,
 				content: e.content
 			});
 
 			scrollToBottom();
 		},
 		ChangeStatus(e: { author: number; afk: boolean }) {
-			if (userStatuses[e.author]) {
-				userStatuses[e.author].afk = e.afk;
-			} else {
-				userStatuses[e.author] = {
+			const status = userStatuses.get(e.author);
+
+			if (status) {
+				userStatuses.set(e.author, {
+					...status,
 					afk: e.afk
-				};
+				});
+			} else {
+				userStatuses.set(e.author, {
+					afk: e.afk
+				});
 
 				if (e.author != connection.id) {
 					// Temporary measure to send status to the new user that connected without storing statuses on the server
 					updateStatus();
 				}
 			}
+		},
+		PubkeySet(e: { id: number; pubkey: string }) {
+			connIdToPubkeyMap.set(e.id, e.pubkey);
 		}
 	};
 
@@ -106,15 +116,17 @@
 		}
 	});
 
-	let userStatuses = $state<Record<string, { afk: boolean }>>({});
+	let userStatuses = new SvelteMap<number, { afk: boolean }>();
 
 	const orderedUserStatuses = $derived(
-		Object.entries(userStatuses)
+		userStatuses
+			.entries()
 			.map(([id, userStatus]) => ({
 				...userStatus,
 				id
 			}))
-			.sort((a, b) => a.id.localeCompare(b.id))
+			.toArray()
+			.sort() // TODO: sort by username alphabetical order
 	);
 
 	let messagesEl = $state<HTMLElement>();
@@ -162,7 +174,7 @@
 
 <svelte:window onfocus={() => (isUserInPage = true)} onblur={() => (isUserInPage = false)} />
 
-<div class="grid w-screen grid-cols-[auto_auto_1fr_auto] border-gray-500 bg-gray-900">
+<div class="grid w-screen grid-cols-[auto_auto_1fr_auto]">
 	<aside class="flex w-16 flex-col gap-2 border-r p-2">
 		<img src="/pexe.png" alt="" class="h-12 w-12" />
 		<img src="/pexe.png" alt="" class="h-12 w-12" />
@@ -211,7 +223,7 @@
 										class="flex w-full items-center gap-2 p-[2px] text-left hover:bg-gray-800"
 									>
 										<img src="/pexe.png" alt="" class="h-6 w-6" />
-										<span class="line-clamp-1 text-sm">{user}</span>
+										<span class="line-clamp-1 text-sm">{connIdToPubkeyMap.get(user) ?? user}</span>
 									</button>
 								{/each}
 							{/if}
@@ -306,7 +318,9 @@
 
 				<div class="rounded-full {user.afk ? 'bg-yellow-500' : 'bg-green-500'}  p-1"></div>
 
-				<span class="line-clamp-1 break-all {user.afk ? 'text-gray-400' : ''}">{user.id}</span>
+				<span class="line-clamp-1 break-all {user.afk ? 'text-gray-400' : ''}"
+					>{connIdToPubkeyMap.get(user.id) ?? user.id}</span
+				>
 			</div>
 		{/each}
 	</aside>

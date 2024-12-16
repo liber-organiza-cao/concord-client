@@ -1,16 +1,13 @@
-<script>
+<script lang="ts">
 	import WebRtcPeer from "$lib/components/webRtcPeer.svelte";
 	import { voiceData } from "$lib/voice.svelte";
 	import { connection } from "$lib/ws.svelte";
-	import { onMount, tick } from "svelte";
+	import { onMount, tick, type Snippet } from "svelte";
 	import "../app.css";
 	import Toast, { push } from "$lib/components/toast.svelte";
-	/**
-	 * @typedef {Object} Props
-	 * @property {import('svelte').Snippet} [children]
-	 */
-	/** @type {Props} */
-	let { children } = $props();
+	import { goto } from "$app/navigation";
+
+	let { children }: { children: Snippet } = $props();
 
 	async function getUserMedia() {
 		try {
@@ -29,6 +26,10 @@
 	onMount(() => {
 		getUserMedia();
 	});
+
+	if (!sessionStorage.getItem("seed")) {
+		goto("/login");
+	}
 </script>
 
 <div>
