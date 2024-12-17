@@ -1,6 +1,5 @@
 import { connection, onWsMessage, sendWsMessage, type Tid } from "$lib/ws.svelte";
 import { tick } from "svelte";
-import { SvelteMap } from "svelte/reactivity";
 
 export const streamManager = (() => {
 	const servers: RTCConfiguration = {
