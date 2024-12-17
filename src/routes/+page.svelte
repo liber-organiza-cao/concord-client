@@ -91,16 +91,20 @@
 
 	let isUserInPage = $state(true);
 
+	let messagesEl = $state<HTMLElement>();
+
 	let changeStatusTimeout: number | null;
 
-	function updateStatus() {
-		if (!WS || WS.readyState != WS.OPEN) return;
+	let userStatuses = new SvelteMap<number, { afk: boolean }>();
 
-		sendWsMessage("ChangeStatus", {
-			author: connection.id!,
-			afk: !isUserInPage
-		});
-	}
+	const orderedUserStatuses = $derived(
+		[...userStatuses.entries()]
+			.map(([id, userStatus]) => ({
+				...userStatus,
+				id
+			}))
+			.sort() // TODO: sort by username alphabetical order
+	);
 
 	$effect(() => {
 		if (changeStatusTimeout) {
@@ -116,22 +120,14 @@
 		}
 	});
 
-	let userStatuses = new SvelteMap<number, { afk: boolean }>();
+	function updateStatus() {
+		if (!WS || WS.readyState != WS.OPEN) return;
 
-	const orderedUserStatuses = $derived(
-		[...userStatuses.entries()]
-			.map(([id, userStatus]) => ({
-				...userStatus,
-				id
-			}))
-			.sort() // TODO: sort by username alphabetical order
-	);
-
-	let messagesEl = $state<HTMLElement>();
-
-	onWsMessage(async (type, data) => {
-		if (serverToClientMsgHandlers[type]) await serverToClientMsgHandlers[type](data);
-	});
+		sendWsMessage("ChangeStatus", {
+			author: connection.id!,
+			afk: !isUserInPage
+		});
+	}
 
 	async function sendMessage() {
 		const content = newMessage.trimStart().trimEnd();
@@ -168,6 +164,10 @@
 
 		return messages[i - 1].author == author;
 	}
+
+	onWsMessage(async (type, data) => {
+		if (serverToClientMsgHandlers[type]) await serverToClientMsgHandlers[type](data);
+	});
 </script>
 
 <svelte:window onfocus={() => (isUserInPage = true)} onblur={() => (isUserInPage = false)} />
