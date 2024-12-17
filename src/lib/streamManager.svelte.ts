@@ -30,7 +30,7 @@ export const streamManager = (() => {
 
 	const voiceChannels = $state<Record<string, number[]>>({});
 	const currentChannel = $state({ id: "" });
-	const voicePeerConnections = $state<SvelteMap<number, PeerConnection>>(new SvelteMap());
+	let voicePeerConnections = $state<Record<number, PeerConnection>>({});
 
 	let localStream = new MediaStream();
 
@@ -63,11 +63,11 @@ export const streamManager = (() => {
 				const index = peers.indexOf(id);
 				if (index > -1) peers.splice(index, 1);
 			}
-			if (voicePeerConnections.has(id))
-				voicePeerConnections.delete(id);
+			if (voicePeerConnections[id])
+				delete voicePeerConnections[id];
 		},
 		async Offer({ id, data }: Tid<RTCSessionDescriptionInit>) {
-			const peer = voicePeerConnections.get(id);
+			const peer = voicePeerConnections[id];
 			if (!peer) return;
 
 			console.log(`[receive Offer]: peerId: ${id}, data: ${JSON.stringify(data)}`);
@@ -75,14 +75,14 @@ export const streamManager = (() => {
 			await createAnswer(id);
 		},
 		async Answer({ id, data }: Tid<RTCSessionDescriptionInit>) {
-			const peer = voicePeerConnections.get(id);
+			const peer = voicePeerConnections[id];
 			if (!peer) return;
 
 			console.log(`[receive Answer]: peerId: ${id}, data: ${JSON.stringify(data)}`);
 			await peer.connection.setRemoteDescription(data);
 		},
 		async Candidate({ id, data }: Tid<RTCIceCandidateInit>) {
-			const peer = voicePeerConnections.get(id);
+			const peer = voicePeerConnections[id];
 			if (!peer) return;
 
 			console.log(`[receive Candidate]: peerId: ${id}, data: ${JSON.stringify(data)}`);
@@ -91,7 +91,7 @@ export const streamManager = (() => {
 	};
 
 	async function createOffer(id: number) {
-		const peer = voicePeerConnections.get(id);
+		const peer = voicePeerConnections[id];
 		if (peer) {
 			const data = await peer.connection.createOffer();
 			console.log(`[create Offer]: peerId: ${id}, data: ${JSON.stringify(data)}`);
@@ -103,7 +103,7 @@ export const streamManager = (() => {
 	}
 
 	async function createAnswer(id: number) {
-		const peer = voicePeerConnections.get(id);
+		const peer = voicePeerConnections[id];
 		if (peer) {
 			const data = await peer.connection.createAnswer();
 			console.log(`[create Answer]: peerId: ${id}, data: ${JSON.stringify(data)}`);
@@ -147,7 +147,7 @@ export const streamManager = (() => {
 			peer.connection.addTrack(track, localStream);
 		});
 
-		voicePeerConnections.set(id, peer);
+		voicePeerConnections[id] = peer;
 	}
 
 	onWsMessage((type, data) => {
@@ -157,7 +157,7 @@ export const streamManager = (() => {
 	async function leaveVoiceChannel() {
 		sendWsMessage("LeaveVoiceChannel", { channel: currentChannel.id });
 		currentChannel.id = "";
-		voicePeerConnections.clear();
+		voicePeerConnections = {};
 		await tick();
 	}
 

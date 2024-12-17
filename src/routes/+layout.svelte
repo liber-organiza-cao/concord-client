@@ -33,8 +33,8 @@
 
 <div>
 	{#key streamManager.currentChannel.id}
-		{#each streamManager.voicePeerConnections ?? [] as [_, peerConnection]}
-			<AudioPeer stream={peerConnection.stream} />
+		{#each Object.entries(streamManager.voicePeerConnections) as [_, conn]}
+			<AudioPeer stream={conn.stream} />
 		{/each}
 	{/key}
 </div>
