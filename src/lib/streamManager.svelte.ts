@@ -29,7 +29,6 @@ export const streamManager = (() => {
 	}
 
 	const voiceChannels = $state<Record<string, number[]>>({});
-	const offerQueue = $state<number[]>([]);
 	const currentChannel = $state({ id: "" });
 	const voicePeerConnections = $state<SvelteMap<number, PeerConnection>>(new SvelteMap());
 
@@ -158,7 +157,6 @@ export const streamManager = (() => {
 	async function leaveVoiceChannel() {
 		sendWsMessage("LeaveVoiceChannel", { channel: currentChannel.id });
 		currentChannel.id = "";
-		offerQueue.length = 0;
 		voicePeerConnections.clear();
 		await tick();
 	}
@@ -196,8 +194,5 @@ export const streamManager = (() => {
 		get voicePeerConnections() {
 			return voicePeerConnections;
 		},
-		get offerQueue() {
-			return offerQueue;
-		}
 	}
 })();
