@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { voiceData } from "$lib/voice.svelte";
+	import { streamManager } from "$lib/streamManager.svelte";
 	import { connection, connIdToPubkeyMap, onWsMessage, sendWsMessage, WS } from "$lib/ws.svelte";
 	import { tick } from "svelte";
 	import { SvelteMap } from "svelte/reactivity";
 
-	const { currentChannel, joinVoiceChannel, leaveVoiceChannel, voiceChannels } = voiceData;
+	const { currentChannel, joinVoiceChannel, leaveVoiceChannel, voiceChannels } = streamManager;
 
 	interface Channel {
 		type: "text" | "voice";
@@ -119,13 +119,11 @@
 	let userStatuses = new SvelteMap<number, { afk: boolean }>();
 
 	const orderedUserStatuses = $derived(
-		userStatuses
-			.entries()
+		[...userStatuses.entries()]
 			.map(([id, userStatus]) => ({
 				...userStatus,
 				id
 			}))
-			.toArray()
 			.sort() // TODO: sort by username alphabetical order
 	);
 

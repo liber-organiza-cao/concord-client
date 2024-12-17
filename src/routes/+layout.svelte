@@ -1,17 +1,16 @@
 <script lang="ts">
-	import WebRtcPeer from "$lib/components/webRtcPeer.svelte";
-	import { voiceData } from "$lib/voice.svelte";
-	import { connection } from "$lib/ws.svelte";
+	import { streamManager } from "$lib/streamManager.svelte";
 	import { onMount, tick, type Snippet } from "svelte";
 	import "../app.css";
 	import Toast, { push } from "$lib/components/toast.svelte";
 	import { goto } from "$app/navigation";
+	import AudioPeer from "$lib/components/AudioPeer.svelte";
 
 	let { children }: { children: Snippet } = $props();
 
 	async function getUserMedia() {
 		try {
-			voiceData.getUserMedia({
+			streamManager.getUserMedia({
 				video: false,
 				audio: true
 			});
@@ -33,11 +32,9 @@
 </script>
 
 <div>
-	{#key voiceData.currentChannel.id}
-		{#each voiceData.voicePeers ?? [] as peerId}
-			{#if peerId != connection.id}
-				<WebRtcPeer {peerId} />
-			{/if}
+	{#key streamManager.currentChannel.id}
+		{#each streamManager.voicePeerConnections ?? [] as [_, peerConnection]}
+			<AudioPeer stream={peerConnection.stream} />
 		{/each}
 	{/key}
 </div>
