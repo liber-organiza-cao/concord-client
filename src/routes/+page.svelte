@@ -146,12 +146,14 @@
 	async function scrollToBottom() {
 		await tick();
 
+		const tolerance = 10;
+
 		const last = messagesEl!.lastElementChild;
 
 		if (!last) return;
 
 		if (
-			messagesEl!.clientHeight + messagesEl!.scrollTop + last.clientHeight <
+			messagesEl!.clientHeight + messagesEl!.scrollTop + last.clientHeight + tolerance <
 			messagesEl!.scrollHeight
 		)
 			return;
