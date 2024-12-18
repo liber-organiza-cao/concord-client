@@ -1,0 +1,16 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+* {
+	@apply border-inherit;
+}
+
+input,
+textarea {
+	@apply rounded-md border-inherit bg-gray-900 bg-inherit p-2;
+}
+
+body {
+	@apply border-gray-500 bg-gray-900 text-white;
+}
