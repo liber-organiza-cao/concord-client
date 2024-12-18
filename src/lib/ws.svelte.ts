@@ -6,7 +6,8 @@ export const url = PUBLIC_API_URL
 		? "ws://127.0.0.1:6464"
 		: window.location.hash.slice(1);
 
-console.log(`api url: ${url}`);
+import { getPublicKey } from "nostr-tools";
+import { mnemonicToSeed } from "@scure/bip39";
 
 export type ClientToServerMsg = {
 	SendMessage: {
@@ -56,11 +57,13 @@ export function onWsMessage(callback: (type: string, data: unknown) => void) {
 	});
 }
 
-export function updateMySecretKey(pubkey: string) {
-	sessionStorage.setItem("seed", pubkey);
+export async function updateMySecretKey(seed: string) {
+	sessionStorage.setItem("seed", seed);
+
+	const secretKey = (await mnemonicToSeed(seed)).slice(0, 32);
 
 	sendWsMessage("SetPubkey", {
-		pubkey // TODO: use actual public key here
+		pubkey: getPublicKey(secretKey)
 	});
 }
 

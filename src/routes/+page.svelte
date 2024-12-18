@@ -22,7 +22,6 @@
 			userStatuses.delete(e.id);
 		},
 		MessageSent(e: { author: string; channel: string; content: string }) {
-			console.log("salkjdlasjd", e);
 			messages.push({
 				author: e.author,
 				content: e.content
