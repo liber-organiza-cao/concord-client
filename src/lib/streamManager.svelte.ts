@@ -29,7 +29,9 @@ export const streamManager = (() => {
 
 	const voiceChannels = $state<Record<string, number[]>>({});
 	const currentChannel = $state({ id: "" });
-	let voicePeerConnections = $state<Record<number, PeerConnection>>({});
+
+	const currentChannelPeers = $derived(voiceChannels[currentChannel.id]);
+	const voicePeerConnections = $state<Record<number, PeerConnection>>({});
 
 	let localStream = new MediaStream();
 
@@ -38,32 +40,23 @@ export const streamManager = (() => {
 		async JoinedVoiceChannel(msgData: { channel: string; id: number }) {
 			const { id, channel: channelName } = msgData;
 			console.log("[JoinedVoiceChannel], ", channelName, id);
+
 			let peers = voiceChannels[channelName];
 			if (peers) {
 				peers.push(id);
 			} else {
 				voiceChannels[channelName] = [id];
-				peers = voiceChannels[channelName];
-			}
-			if (channelName == currentChannel.id) {
-				for (const id of peers) {
-					if (id == connection.id) continue;
-					addConnectionPeer(id);
-				}
-				if (id != connection.id)
-					createOffer(id);
 			}
 		},
 		async LeftVoiceChannel(msgData: { channel: string; id: number }) {
 			const { id, channel: channelName } = msgData;
 			console.log("[LeftVoiceChannel], ", channelName, id);
+
 			const peers = voiceChannels[channelName];
 			if (peers) {
 				const index = peers.indexOf(id);
 				if (index > -1) peers.splice(index, 1);
 			}
-			if (voicePeerConnections[id])
-				delete voicePeerConnections[id];
 		},
 		async Offer({ id, data }: Tid<RTCSessionDescriptionInit>) {
 			const peer = voicePeerConnections[id];
@@ -103,6 +96,7 @@ export const streamManager = (() => {
 
 	async function createAnswer(id: number) {
 		const peer = voicePeerConnections[id];
+
 		if (peer) {
 			const data = await peer.connection.createAnswer();
 			console.log(`[create Answer]: peerId: ${id}, data: ${JSON.stringify(data)}`);
@@ -114,11 +108,13 @@ export const streamManager = (() => {
 	}
 
 	function addConnectionPeer(id: number) {
-		const connection = new RTCPeerConnection(servers);
-		const stream = new MediaStream();
+		if (voicePeerConnections[id])
+			return;
 
+		const conn = new RTCPeerConnection(servers);
+		const stream = new MediaStream();
 		const peer: PeerConnection = {
-			connection,
+			connection: conn,
 			stream
 		};
 
@@ -147,6 +143,18 @@ export const streamManager = (() => {
 		});
 
 		voicePeerConnections[id] = peer;
+		if (id < connection.id) {
+			createOffer(id);
+		}
+	}
+
+	function remoteConnectionPeer(id: number) {
+		const peer = voicePeerConnections[id];
+
+		if (!peer)
+			return;
+		peer.connection.close();
+		delete voicePeerConnections[id];
 	}
 
 	onWsMessage((type, data) => {
@@ -154,9 +162,10 @@ export const streamManager = (() => {
 	});
 
 	async function leaveVoiceChannel() {
+		if (currentChannel.id.length == 0)
+			return;
 		sendWsMessage("LeaveVoiceChannel", { channel: currentChannel.id });
 		currentChannel.id = "";
-		voicePeerConnections = {};
 		await tick();
 	}
 
@@ -174,7 +183,29 @@ export const streamManager = (() => {
 	async function getUserMedia(constraints: MediaStreamConstraints) {
 		localStream = await navigator.mediaDevices.getUserMedia(constraints);
 	}
+
+	async function init() {
+		$effect(() => {
+			if (!currentChannelPeers) {
+				for (const id in voicePeerConnections) {
+					remoteConnectionPeer(Number(id));
+				}
+				return;
+			}
+			for (const id of currentChannelPeers) {
+				if (!voicePeerConnections[id] && id != connection.id) {
+					addConnectionPeer(id);
+				}
+			}
+			for (const id in voicePeerConnections) {
+				if (!currentChannelPeers.includes(Number(id))) {
+					remoteConnectionPeer(Number(id));
+				}
+			}
+		});
+	}
 	return {
+		init,
 		leaveVoiceChannel,
 		joinVoiceChannel,
 		getUserMedia,

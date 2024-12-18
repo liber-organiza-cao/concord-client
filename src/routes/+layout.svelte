@@ -6,6 +6,8 @@
 	import { goto } from "$app/navigation";
 	import AudioPeer from "$lib/components/AudioPeer.svelte";
 
+	streamManager.init();
+
 	let { children }: { children: Snippet } = $props();
 
 	async function getUserMedia() {
