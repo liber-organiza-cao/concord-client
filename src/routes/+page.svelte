@@ -4,7 +4,7 @@
 	import { tick } from "svelte";
 	import { SvelteMap } from "svelte/reactivity";
 
-	const { currentChannel, joinVoiceChannel, leaveVoiceChannel, voiceChannels } = streamManager;
+	const { currentChannel, setMuted, joinVoiceChannel, leaveVoiceChannel, voiceChannels } = streamManager;
 
 	interface Channel {
 		type: "text" | "voice";
@@ -243,6 +243,9 @@
 					<button onclick={leaveVoiceChannel}>❌</button>
 				</div>
 			{/if}
+			<button onclick={() => setMuted(!currentChannel.isMuted)}>
+				🎤 {currentChannel.isMuted ? 'Click to unmute' : 'Click to mute'}
+			</button>
 			<p class="text-center">your id is {connection.id}</p>
 			<input bind:value={myUsername} class="w-full border" type="text" />
 		</div>

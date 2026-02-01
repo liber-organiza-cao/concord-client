@@ -16,7 +16,7 @@ export const streamManager = (() => {
 				urls: "turn:standard.relay.metered.ca:443",
 				username: "9df5a10a093ff890b8cb9dac",
 				credential: "U7oguQTnz/ciUWtd"
-			},
+			}
 		]
 	};
 
@@ -28,7 +28,7 @@ export const streamManager = (() => {
 	}
 
 	const voiceChannels = $state<Record<string, number[]>>({});
-	const currentChannel = $state({ id: "" });
+	const currentChannel = $state({ id: "", isMuted: false });
 
 	const currentChannelPeers = $derived(voiceChannels[currentChannel.id]);
 	const voicePeerConnections = $state<Record<number, PeerConnection>>({});
@@ -41,7 +41,7 @@ export const streamManager = (() => {
 			const { id, channel: channelName } = msgData;
 			console.log("[JoinedVoiceChannel], ", channelName, id);
 
-			let peers = voiceChannels[channelName];
+			const peers = voiceChannels[channelName];
 			if (peers) {
 				peers.push(id);
 			} else {
@@ -108,8 +108,7 @@ export const streamManager = (() => {
 	}
 
 	function addConnectionPeer(id: number) {
-		if (voicePeerConnections[id])
-			return;
+		if (voicePeerConnections[id]) return;
 
 		const conn = new RTCPeerConnection(servers);
 		const stream = new MediaStream();
@@ -151,8 +150,7 @@ export const streamManager = (() => {
 	function remoteConnectionPeer(id: number) {
 		const peer = voicePeerConnections[id];
 
-		if (!peer)
-			return;
+		if (!peer) return;
 		peer.connection.close();
 		delete voicePeerConnections[id];
 	}
@@ -162,8 +160,7 @@ export const streamManager = (() => {
 	});
 
 	async function leaveVoiceChannel() {
-		if (currentChannel.id.length == 0)
-			return;
+		if (currentChannel.id.length == 0) return;
 		sendWsMessage("LeaveVoiceChannel", { channel: currentChannel.id });
 		currentChannel.id = "";
 		await tick();
@@ -178,6 +175,13 @@ export const streamManager = (() => {
 		currentChannel.id = channel;
 		sendWsMessage("JoinVoiceChannel", { channel });
 		await tick();
+	}
+
+	function setMuted(value: boolean) {
+		currentChannel.isMuted = value;
+		for (const track of localStream.getAudioTracks()) {
+			track.enabled = !value;
+		}
 	}
 
 	async function getUserMedia(constraints: MediaStreamConstraints) {
@@ -204,10 +208,12 @@ export const streamManager = (() => {
 			}
 		});
 	}
+
 	return {
 		init,
 		leaveVoiceChannel,
 		joinVoiceChannel,
+		setMuted,
 		getUserMedia,
 		get voiceChannels() {
 			return voiceChannels;
@@ -223,6 +229,6 @@ export const streamManager = (() => {
 		},
 		get voicePeerConnections() {
 			return voicePeerConnections;
-		},
-	}
+		}
+	};
 })();

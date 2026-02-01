@@ -14,7 +14,10 @@
 		try {
 			streamManager.getUserMedia({
 				video: false,
-				audio: true
+				audio: {
+					noiseSuppression: true,
+					echoCancellation: true,
+				}
 			});
 		} catch (e) {
 			console.error(e);
