@@ -11,39 +11,40 @@
 	let savedKey = $state(false);
 </script>
 
-<div class="flex h-screen w-screen flex-col items-center justify-center gap-2 p-4">
-	<div class="flex flex-col items-center gap-2">
-		<h1 class="text-3xl">Register</h1>
+<div class="flex min-h-screen max-w-screen flex-col items-center justify-center gap-2">
+	<img src="/pexe-concord.png" alt="" class="hidden xl:block xl:mb-10">
+	<div class="bg-gray-700 w-full h-screen overflow-y-auto pt-4 pb-4 text-sm text-center sm:text-lg md:text-xl xl:max-w-3xl xl:h-fit xl:rounded-lg">
+		<div class="flex flex-col items-center gap-3 mt-2">
+			<img src="/pexe-concord.png" alt="" class="block w-96 p-4 mx-auto xl:hidden">
+			{#if !isKeyShown}
+				<h1 class="flex flex-col items-center text-3xl font-bold mt-2">Register here!</h1>
+				<p class="hidden sm:block sm:text-4xl">⚠️</p>
+					<h1>A secret key will be generated! Save it somewhere <span class="font-bold">secure and private.</span></h1>
+					<p>Any person with acess to this key can <span class="font-bold">access your account!</span></p>
+					<p>If you lose it, you <span class="font-bold">won't be able to access your account.</span></p>
+				<div class="btn-width mt-3"><Button onclick={() => (isKeyShown = true)}>Generate key</Button></div>
+			{/if}
 
-		<hr class="m-2 w-64" />
+			{#if isKeyShown}
+				<h1 class="flex flex-col items-center text-3xl font-bold mt-2">This is your key ⬇️</h1>
+				<p class="bg-slate-800 p-2 text-xl rounded-lg m-2">{generatedKey}</p>
+				<label class="flex items-center cursor-pointer">
+					<input class="w-6 h-6 ml-1 mr-1 rounded-lg accent-orange-500 " type="checkbox" bind:checked={savedKey}> I have saved the key in a secure and private place.
+				</label>
+				<div class="btn-width">
+					<Button
+						disabled={!savedKey}
+						onclick={() => {
+							updateMySecretKey(generatedKey)
+					
+							goto("/")
+						}}>Register account</Button>
+				</div>
+			{/if}
+		</div>
 
-		{#if !isKeyShown}
-			<p>⚠️ A secret key will be generated. Save it somewhere secure and private.</p>
-			<p>⚠️ Any person with access to this key can access your account.</p>
-			<p>⚠️ If you lose it, you will not be able to access your account.</p>
-			<Button onclick={() => (isKeyShown = true)}>Generate key</Button>
-		{/if}
-		<pre class="{isKeyShown ? '' : 'blur-lg'} bg-slate-700 p-2">{generatedKey}</pre>
-		{#if isKeyShown}
-			<label>
-				<input class="accent-orange-500" type="checkbox" bind:checked={savedKey} />
-				I have saved the key in a private and secure place.
-			</label>
-		{/if}
-		<Button
-			disabled={!savedKey}
-			onclick={() => {
-				updateMySecretKey(generatedKey);
-
-				goto("/");
-			}}>Register</Button
-		>
+		<div class="flex flex-col items-center mt-4">
+			<p class="text-slate-400" >Already have an account? <a href="/login" class="text-blue-400 underline hover:no-underline">Log in</a></p>
+		</div>
 	</div>
-
-	<hr class="m-2 w-64" />
-
-	<p>Already have an account?</p>
-	<a href="/login">
-		<Button>Login instead</Button>
-	</a>
 </div>
