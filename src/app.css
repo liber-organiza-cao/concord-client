@@ -14,3 +14,9 @@ textarea {
 body {
 	@apply border-gray-500 bg-gray-900 text-white;
 }
+
+@layer components {
+	.login-btn-width button {
+		@apply w-80 md:w-96; 
+	}
+}

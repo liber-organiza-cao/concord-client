@@ -9,33 +9,35 @@
 	const isValid = $derived(bip39.validateMnemonic(secretKey, wordlist));
 </script>
 
-<div class="flex h-screen w-screen flex-col items-center justify-center gap-2 p-4">
-	<h1 class="text-3xl">Login</h1>
+<div class="flex min-h-screen max-w-screen flex-col items-center justify-center gap-2">
+	<img src="/pexe-concord.png" alt="" class="hidden xl:block xl:mb-10">
+	<div class="bg-gray-700 w-full h-screen overflow-y-auto pt-4 pb-4 md:text-xl xl:max-w-xl xl:h-fit xl:rounded-lg">
+		<img src="/pexe-concord.png" alt="" class="block w-96 p-4 mx-auto xl:hidden">
+		<div class="flex flex-col items-center gap-3">
+			<span class="font-bold text-xl md:text-2xl">Welcome back freedom enjoyer!</span>
+			<p class="text-gray-300 text-md">proceed with the login below.</p>
+		</div>
+		<div class="flex flex-col gap-4 mt-10">
+			<label class="flex flex-col items-center">
+				<input 
+					placeholder="Insert your 12 words secret key here!" 
+					class="gray-500 border border-gray-500 w-80 md:w-96" 
+					type="text" 
+					bind:value={secretKey}
+				/>
+			</label>
+			<div class="login-btn-width flex flex-col items-center">
+				<Button
+					disabled={!isValid}
+					onclick={() => {
+						updateMySecretKey(secretKey);
 
-	<hr class="m-2 w-64" />
-
-	<label class="flex flex-col gap-2">
-		Secret key (12 words)
-		<input
-			placeholder=""
-			class="gray-500 border border-gray-500"
-			type="text"
-			bind:value={secretKey}
-		/>
-	</label>
-	<Button
-		disabled={!isValid}
-		onclick={() => {
-			updateMySecretKey(secretKey);
-
-			goto("/");
-		}}>Login</Button
-	>
-
-	<hr class="m-2 w-64" />
-
-	<p>Don't have an account?</p>
-	<a href="/register">
-		<Button>Register instead</Button>
-	</a>
+						goto("/")
+					}}>Log In</Button>
+			</div>
+		</div>
+		<div class="flex flex-col items-center mt-4">
+			<p class="text-slate-400">New to concord? <a href="/register" class="text-blue-400 underline hover:no-underline">Register instead</a></p>
+		</div>
+	</div>
 </div>
