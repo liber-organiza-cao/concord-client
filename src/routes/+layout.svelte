@@ -31,8 +31,8 @@
 		getUserMedia();
 	});
 
-	if (!sessionStorage.getItem("seed")) {
-		goto("/login");
+	if (!sessionStorage.getItem("seed")) { 
+		goto("/concord"); 
 	}
 </script>
 
